@@ -1,93 +1,131 @@
+import argparse
+import os
 import cv2
 import numpy as np
-import winsound  # Import winsound for beep sound
+import winsound
 
-# Load YOLO
-net = cv2.dnn.readNet("yolov3.weights", "yolov3.cfg")
-layer_names = net.getLayerNames()
+VEHICLE_CLASSES = {"car", "truck", "bus", "motorbike", "bicycle"}
 
-# Adjust this line to handle different OpenCV versions
-output_layers_indices = net.getUnconnectedOutLayers()
-if isinstance(output_layers_indices, np.ndarray):
-    output_layers_indices = output_layers_indices.flatten()  # Flatten if it's a 2D array
 
-output_layers = [layer_names[i - 1] for i in output_layers_indices]
+def get_asset(path):
+    return os.path.join(os.path.dirname(__file__), path)
 
-# Load class names
+
+def find_yolo_files():
+    cfg = get_asset("yolov3.cfg")
+    weights = get_asset("yolov3.weights")
+    if not os.path.exists(cfg) or not os.path.exists(weights):
+        cfg = get_asset("yolov3-tiny.cfg")
+        weights = get_asset("yolov3-tiny.weights")
+    if not os.path.exists(cfg) or not os.path.exists(weights):
+        raise FileNotFoundError(
+            "YOLO config and weights files are required. Run download_assets.py or add yolov3.cfg and yolov3.weights / yolov3-tiny.weights to the repository."
+        )
+    return weights, cfg
+
+
 def load_classes():
-    with open("coco.names", "r") as f:
-        classes = [line.strip() for line in f.readlines()]
-    return classes
+    path = get_asset("coco.names")
+    if not os.path.exists(path):
+        raise FileNotFoundError("Missing coco.names. Run download_assets.py or add coco.names to the repository.")
+    with open(path, "r", encoding="utf-8") as f:
+        return [line.strip() for line in f if line.strip()]
 
-classes = load_classes()
 
-# Load video
-cap = cv2.VideoCapture(r"C:\Users\Nisar\OneDrive\Desktop\7Accident Predict\your_video.mp4")
+def load_yolo():
+    weights, cfg = find_yolo_files()
+    net = cv2.dnn.readNet(weights, cfg)
+    layer_names = net.getLayerNames()
+    output_layers = net.getUnconnectedOutLayers()
+    if isinstance(output_layers, np.ndarray):
+        output_layers = output_layers.flatten()
+    output_layers = [layer_names[i - 1] for i in output_layers]
+    return net, output_layers
 
-while cap.isOpened():
-    ret, frame = cap.read()
-    if not ret:
-        break
 
-    height, width, _ = frame.shape
+def parse_args():
+    parser = argparse.ArgumentParser(description="Accident detection using YOLO object detection.")
+    parser.add_argument(
+        "--video",
+        type=str,
+        default=None,
+        help="Path to a video file. If omitted, the webcam is used.",
+    )
+    return parser.parse_args()
 
-    # Detecting objects
-    blob = cv2.dnn.blobFromImage(frame, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
-    net.setInput(blob)
-    outputs = net.forward(output_layers)
 
-    boxes = []
-    confidences = []
-    class_ids = []
+def main():
+    args = parse_args()
+    net, output_layers = load_yolo()
+    classes = load_classes()
 
-    for output in outputs:
-        for detection in output:
-            scores = detection[5:]
-            class_id = np.argmax(scores)
-            confidence = scores[class_id]
-            if confidence > 0.5:  # Confidence threshold
-                center_x = int(detection[0] * width)
-                center_y = int(detection[1] * height)
-                w = int(detection[2] * width)
-                h = int(detection[3] * height)
+    source = args.video if args.video else 0
+    cap = cv2.VideoCapture(source)
+    if not cap.isOpened():
+        raise RuntimeError(f"Unable to open video source: {source}")
 
-                # Rectangle coordinates
-                x = int(center_x - w / 2)
-                y = int(center_y - h / 2)
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
 
-                boxes.append([x, y, w, h])
-                confidences.append(float(confidence))
-                class_ids.append(class_id)
+        height, width, _ = frame.shape
+        blob = cv2.dnn.blobFromImage(frame, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
+        net.setInput(blob)
+        outputs = net.forward(output_layers)
 
-    # Non-max suppression
-    indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
+        boxes, confidences, class_ids = [], [], []
+        for output in outputs:
+            for detection in output:
+                scores = detection[5:]
+                class_id = int(np.argmax(scores))
+                confidence = float(scores[class_id])
+                if confidence > 0.5:
+                    center_x = int(detection[0] * width)
+                    center_y = int(detection[1] * height)
+                    w = int(detection[2] * width)
+                    h = int(detection[3] * height)
+                    x = int(center_x - w / 2)
+                    y = int(center_y - h / 2)
+                    boxes.append([x, y, w, h])
+                    confidences.append(confidence)
+                    class_ids.append(class_id)
 
-    # Check for accidents
-    accident_detected = False
-    for i in range(len(boxes)):
-        if i in indexes:
-            x, y, w, h = boxes[i]
-            label = str(classes[class_ids[i]])
-            if label in ["car", "truck", "bus"]:  # Check for vehicle classes
-                # Logic to determine if an accident occurred
-                for j in range(i + 1, len(boxes)):
-                    if j in indexes:
-                        x2, y2, w2, h2 = boxes[j]
-                        if abs(x - x2) < 50 and abs(y - y2) < 50:  # Proximity check
-                            accident_detected = True
-                            break
+        indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
+        accident_detected = False
 
-    if accident_detected:
-        # Display the accident message on the video
-        cv2.putText(frame, "Accident occurred!", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        
-        # Play beep sound
-        winsound.Beep(1000, 1000)  # Frequency 1000 Hz for 1000 ms
+        if len(indexes) > 0:
+            for i in indexes.flatten():
+                if classes[class_ids[i]] not in VEHICLE_CLASSES:
+                    continue
+                x, y, w, h = boxes[i]
+                for j in indexes.flatten():
+                    if i == j:
+                        continue
+                    x2, y2, w2, h2 = boxes[j]
+                    if abs(x - x2) < 0.5 * (w + w2) and abs(y - y2) < 0.5 * (h + h2):
+                        accident_detected = True
+                        break
+                if accident_detected:
+                    break
 
-    # Display the resulting frame
-    cv2.imshow("Frame", frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                cv2.putText(frame, classes[class_ids[i]], (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
-cap.release()
-cv2.destroyAllWindows()
+        if accident_detected:
+            cv2.putText(frame, "Accident likely detected", (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            try:
+                winsound.Beep(1000, 500)
+            except RuntimeError:
+                pass
+
+        cv2.imshow("Accident Detection", frame)
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    main()

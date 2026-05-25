@@ -1,32 +1,48 @@
+import argparse
+import os
 import cv2
-import winsound  # Only works on Windows
+import winsound
+
 
 def check_speed_and_overlay_image(image_path, speed):
-    # Load the image
     image = cv2.imread(image_path)
+    if image is None:
+        raise FileNotFoundError(f"Unable to load image '{image_path}'. Please check the path.")
 
-    # Define the message based on speed
     if speed > 70:
-        message = "Slow down speed"
-        # Beep sound for overspeed
-        winsound.Beep(1000, 1000)  # Frequency: 1000 Hz, Duration: 1000 ms
+        message = "Overspeed Alert: Slow down"
+        try:
+            winsound.Beep(1000, 500)
+        except RuntimeError:
+            pass
+        color = (0, 0, 255)
     else:
         message = "Speed OK"
+        color = (0, 255, 0)
 
-    # Set the font and position for the message
     font = cv2.FONT_HERSHEY_SIMPLEX
-    position = (50, 50)  # Top-left corner
-    font_scale = 1
-    color = (0, 255, 0)  # Green color
-    thickness = 2
+    position = (30, 50)
+    cv2.putText(image, message, position, font, 1, color, 2)
+    cv2.putText(image, f"Speed: {speed} km/h", (30, 90), font, 0.9, (255, 255, 255), 2)
 
-    # Overlay the message on the image
-    cv2.putText(image, message, position, font, font_scale, color, thickness)
-
-    # Display the image
-    cv2.imshow("Speed Check", image)
+    cv2.imshow("Overspeed Detection", image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-# Example usage
-check_speed_and_overlay_image(r"C:\Users\Nisar\OneDrive\Desktop\7Speedometer\Overspeeding.jpg", 75)
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Overlay speed messages on an image.")
+    parser.add_argument("--image", required=True, help="Path to the image file.")
+    parser.add_argument("--speed", type=float, default=0, help="Detected speed in km/h.")
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+    if not os.path.exists(args.image):
+        raise FileNotFoundError(f"Image not found: {args.image}")
+    check_speed_and_overlay_image(args.image, args.speed)
+
+
+if __name__ == "__main__":
+    main()
