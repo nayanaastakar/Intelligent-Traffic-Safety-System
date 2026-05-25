@@ -1,0 +1,178 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Safety Command Center</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12h3l3-8 4 16 3-8h5"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1>Traffic Safety</h1>
+                    <p>Vision Analytics Platform</p>
+                </div>
+            </div>
+
+            <nav class="nav-list" aria-label="Detection modules">
+                <a href="#library" class="nav-link active">Video Library</a>
+                <a href="#traffic" class="nav-link">Traffic Density</a>
+                <a href="#accident" class="nav-link">Accident</a>
+                <a href="#vehicle" class="nav-link">Vehicles</a>
+                <a href="#overspeed" class="nav-link">Overspeed</a>
+                <a href="#drowsiness" class="nav-link">Drowsiness</a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <p>Press <kbd>Esc</kbd> or <kbd>Q</kbd> in any detection window to stop.</p>
+            </div>
+        </aside>
+
+        <main class="workspace">
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">Intelligent monitoring suite</p>
+                    <h2>Traffic &amp; driver safety dashboard</h2>
+                </div>
+                <div id="status" class="status-pill" role="status">System ready</div>
+            </header>
+
+            <section id="library" class="panel library-panel">
+                <div class="panel-header">
+                    <div>
+                        <h3>Uploaded video library</h3>
+                        <p class="panel-subtitle">Current mapping: <code>video1.mp4</code> for traffic/vehicles, <code>video4.mp4</code> for overspeed, <code>video5.mp4</code> for drowsiness, and <code>video6.mp4</code> for accident detection.</p>
+                    </div>
+                    <div class="panel-actions">
+                        <button type="button" class="btn btn-ghost" id="refresh-uploads">Refresh</button>
+                        <button type="button" class="btn btn-ghost" id="stop-modules">Stop running modules</button>
+                    </div>
+                </div>
+                <div id="assignments-grid" class="assignments-grid"></div>
+                <div id="uploads-list" class="uploads-list"></div>
+            </section>
+
+            <section class="modules-grid">
+                <article id="traffic" class="module-card" data-module="traffic" data-accent="blue">
+                    <header class="module-header">
+                        <span class="module-badge">01</span>
+                        <div>
+                            <h3>Traffic Density</h3>
+                            <p>YOLO vehicle detection with live density averaging.</p>
+                        </div>
+                        <span class="ready-badge" data-ready-for="traffic">-</span>
+                    </header>
+                    <div class="module-body">
+                        <label for="traffic-video-select">Source video</label>
+                        <select id="traffic-video-select" class="video-select"></select>
+                        <details class="advanced">
+                            <summary>Upload a different file</summary>
+                            <input type="file" id="traffic-video" accept="video/*">
+                        </details>
+                    </div>
+                    <button type="button" class="btn btn-primary" data-run="traffic">Run detection</button>
+                </article>
+
+                <article id="accident" class="module-card" data-module="accident" data-accent="red">
+                    <header class="module-header">
+                        <span class="module-badge">02</span>
+                        <div>
+                            <h3>Accident Detection</h3>
+                            <p>Proximity-based collision warnings with audio alert.</p>
+                        </div>
+                        <span class="ready-badge" data-ready-for="accident">-</span>
+                    </header>
+                    <div class="module-body">
+                        <label for="accident-video-select">Source video</label>
+                        <select id="accident-video-select" class="video-select"></select>
+                        <details class="advanced">
+                            <summary>Upload a different file</summary>
+                            <input type="file" id="accident-video" accept="video/*">
+                        </details>
+                    </div>
+                    <button type="button" class="btn btn-primary" data-run="accident">Run detection</button>
+                </article>
+
+                <article id="vehicle" class="module-card" data-module="vehicle" data-accent="green">
+                    <header class="module-header">
+                        <span class="module-badge">03</span>
+                        <div>
+                            <h3>Vehicle Classification</h3>
+                            <p>Identify cars, buses, trucks, and bikes with labels.</p>
+                        </div>
+                        <span class="ready-badge" data-ready-for="vehicle">-</span>
+                    </header>
+                    <div class="module-body">
+                        <label for="vehicle-video-select">Source video</label>
+                        <select id="vehicle-video-select" class="video-select"></select>
+                        <details class="advanced">
+                            <summary>Upload image or video</summary>
+                            <input type="file" id="vehicle-input" accept="image/*,video/*">
+                        </details>
+                    </div>
+                    <button type="button" class="btn btn-primary" data-run="vehicle">Run detection</button>
+                </article>
+
+                <article id="overspeed" class="module-card" data-module="overspeed" data-accent="amber">
+                    <header class="module-header">
+                        <span class="module-badge">04</span>
+                        <div>
+                            <h3>Overspeed Alert</h3>
+                            <p>Speed overlay with visual and audio warnings above 70 km/h.</p>
+                        </div>
+                        <span class="ready-badge" data-ready-for="overspeed">-</span>
+                    </header>
+                    <div class="module-body">
+                        <label for="overspeed-video-select">Source video</label>
+                        <select id="overspeed-video-select" class="video-select"></select>
+                        <label for="speed-input">Simulated speed (km/h)</label>
+                        <input type="number" id="speed-input" min="0" max="240" value="85">
+                        <details class="advanced">
+                            <summary>Upload image or video</summary>
+                            <input type="file" id="overspeed-input" accept="image/*,video/*">
+                        </details>
+                    </div>
+                    <button type="button" class="btn btn-primary" data-run="overspeed">Run detection</button>
+                </article>
+
+                <article id="drowsiness" class="module-card module-card-wide" data-module="drowsiness" data-accent="violet">
+                    <header class="module-header">
+                        <span class="module-badge">05</span>
+                        <div>
+                            <h3>Drowsiness Detection</h3>
+                            <p>MediaPipe face landmarks using <strong>video5.mp4</strong> or live camera.</p>
+                        </div>
+                        <span class="ready-badge" data-ready-for="drowsiness">-</span>
+                    </header>
+                    <div class="module-body split">
+                        <div>
+                            <label for="drowsiness-video-select">Source video</label>
+                            <select id="drowsiness-video-select" class="video-select"></select>
+                            <details class="advanced">
+                                <summary>Upload a different file</summary>
+                                <input type="file" id="drowsiness-video" accept="video/*">
+                            </details>
+                        </div>
+                        <div>
+                            <label for="camera-input">Camera index (if no video)</label>
+                            <input type="number" id="camera-input" min="0" value="0">
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary" data-run="drowsiness">Run detection</button>
+                </article>
+            </section>
+        </main>
+    </div>
+
+    <div id="toast" class="toast" hidden></div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
+

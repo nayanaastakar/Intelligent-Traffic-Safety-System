@@ -12,3 +12,6 @@ dist/
 *.egg-info/
 *.weights
 !yolov3-tiny.weights
+logs/
+uploads/
+*.mp4

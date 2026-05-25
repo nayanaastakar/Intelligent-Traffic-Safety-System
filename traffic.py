@@ -2,6 +2,7 @@ import argparse
 import os
 import cv2
 import numpy as np
+from cv_utils import should_exit, show_exit_hint
 
 ASSET_NAMES = {
     "yolov3.cfg": "https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg",
@@ -54,8 +55,8 @@ def parse_args():
     parser.add_argument(
         "--video",
         type=str,
-        default=None,
-        help="Path to a traffic video file. If omitted, the default webcam is used.",
+        required=True,
+        help="Path to a traffic video file (required).",
     )
     return parser.parse_args()
 
@@ -65,7 +66,7 @@ def main():
     net, output_layers = load_yolo()
     classes = load_classes()
 
-    video_source = args.video if args.video else 0
+    video_source = args.video
     cap = cv2.VideoCapture(video_source)
     if not cap.isOpened():
         raise RuntimeError(f"Unable to open video source: {video_source}")
@@ -117,8 +118,9 @@ def main():
         traffic_density = total_vehicles / frame_count if frame_count else 0
         cv2.putText(frame, f"Traffic Density Avg: {traffic_density:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
 
+        show_exit_hint(frame)
         cv2.imshow("Traffic Density Tracker", frame)
-        if cv2.waitKey(1) & 0xFF == ord("q"):
+        if should_exit(1):
             break
 
     cap.release()
