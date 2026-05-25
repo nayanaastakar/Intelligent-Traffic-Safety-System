@@ -121,6 +121,8 @@ Place these files in the `uploads/` folder:
 
 The dashboard auto-selects the correct video for each module. Press `Esc` or `q` in any detection window to exit.
 
+Sample copies of the usable videos are included in `sample_videos/`. If you need to restore the local inputs later, copy them from `sample_videos/` into `uploads/` using the same filenames.
+
 ## Notes
 
 - `drowsiness.py` uses the webcam by default and falls back to `uploads/video5.mp4` if the camera cannot open.

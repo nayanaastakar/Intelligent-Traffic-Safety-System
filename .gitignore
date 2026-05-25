@@ -15,3 +15,5 @@ dist/
 logs/
 uploads/
 *.mp4
+!sample_videos/
+!sample_videos/*.mp4
