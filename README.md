@@ -269,6 +269,18 @@ python main.py drowsiness
 
 ---
 
+## 📱 Responsive Design & Cross-Device Support
+
+The platform features a fully responsive architecture optimized across smartphones, tablets, laptops, and ultra-wide surveillance video walls:
+
+- **Mobile Navigation Drawer**: Slide-out offcanvas navigation on screens `< 992px` featuring a translucent backdrop blur and a dedicated close button.
+- **Adaptive Topbar**: Compact command header that collapses long breadcrumb hierarchies and preserves touch targets for quick media upload, alert triage, and operator status.
+- **Fluid Metric Grids**: KPI summary metrics automatically reflow into a clean 2-column layout on phones (`col-6 col-md-4 col-xl-2`), preventing excessive vertical scrolling.
+- **Touch-Friendly Controls**: Enlarged range slider thumbs, full-width submission triggers, and mobile-optimized drag-and-drop dropzones.
+- **Responsive Telemetry & Charts**: Chart.js canvases auto-scale fluidly across device widths with responsive legend placements and horizontally scrollable data tables (`.table-responsive`).
+
+---
+
 ## 🔒 Security & Reliability
 - **Controlled File Delivery**: Internal server paths are masked behind `/media/<path>`, guarded against path traversal.
 - **Background Processing**: Video processing runs inside isolated thread pools so web requests never freeze.

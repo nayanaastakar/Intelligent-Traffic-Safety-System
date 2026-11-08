@@ -16,30 +16,30 @@
     </div>
 </div>
 
-<!-- Alert Metrics Summary Cards -->
+<!-- Alert Metrics Summary Cards (2x2 on mobile, 4-col on desktop) -->
 <div class="row g-3 mb-4">
-    <div class="col-sm-3">
+    <div class="col-6 col-lg-3">
         <div class="surveillance-card">
             <div class="card-accent-bar accent-blue"></div>
             <div class="card-meta-title">Total Alerts Recorded</div>
             <div class="card-metric-value">{{ stats.total }}</div>
         </div>
     </div>
-    <div class="col-sm-3">
+    <div class="col-6 col-lg-3">
         <div class="surveillance-card">
             <div class="card-accent-bar accent-red"></div>
             <div class="card-meta-title">Active Alerts</div>
             <div class="card-metric-value" style="color: #ef4444;">{{ stats.active }}</div>
         </div>
     </div>
-    <div class="col-sm-3">
+    <div class="col-6 col-lg-3">
         <div class="surveillance-card">
             <div class="card-accent-bar accent-amber"></div>
             <div class="card-meta-title">Critical Severity</div>
             <div class="card-metric-value" style="color: #f59e0b;">{{ stats.critical }}</div>
         </div>
     </div>
-    <div class="col-sm-3">
+    <div class="col-6 col-lg-3">
         <div class="surveillance-card">
             <div class="card-accent-bar accent-green"></div>
             <div class="card-meta-title">Resolved Incidents</div>
@@ -51,7 +51,7 @@
 <!-- Filters Bar -->
 <div class="dashboard-panel p-3 mb-4">
     <form method="GET" class="row g-2 align-items-center">
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-md-3">
             <select name="module" class="form-control-surv" onchange="this.form.submit()">
                 <option value="all" {% if current_filters.module == 'all' %}selected{% endif %}>All Detection Modules</option>
                 <option value="accident" {% if current_filters.module == 'accident' %}selected{% endif %}>Accident Detection</option>
@@ -60,7 +60,7 @@
                 <option value="traffic" {% if current_filters.module == 'traffic' %}selected{% endif %}>Traffic Density</option>
             </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-md-3">
             <select name="severity" class="form-control-surv" onchange="this.form.submit()">
                 <option value="all" {% if current_filters.severity == 'all' %}selected{% endif %}>All Severity Levels</option>
                 <option value="Critical" {% if current_filters.severity == 'Critical' %}selected{% endif %}>Critical</option>
@@ -69,7 +69,7 @@
                 <option value="Low" {% if current_filters.severity == 'Low' %}selected{% endif %}>Low</option>
             </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-md-3">
             <select name="status" class="form-control-surv" onchange="this.form.submit()">
                 <option value="all" {% if current_filters.status == 'all' %}selected{% endif %}>All Statuses</option>
                 <option value="Active" {% if current_filters.status == 'Active' %}selected{% endif %}>Active</option>
@@ -77,8 +77,8 @@
                 <option value="Resolved" {% if current_filters.status == 'Resolved' %}selected{% endif %}>Resolved</option>
             </select>
         </div>
-        <div class="col-md-3 text-end">
-            <a href="{{ url_for('alerts.index') }}" class="btn-secondary-surv" style="font-size: 0.8rem;">Reset Filters</a>
+        <div class="col-12 col-sm-6 col-md-3 text-start text-md-end">
+            <a href="{{ url_for('alerts.index') }}" class="btn-secondary-surv w-100 w-md-auto text-center" style="font-size: 0.8rem;">Reset Filters</a>
         </div>
     </form>
 </div>
@@ -104,45 +104,43 @@
                 <tr id="alert-row-{{ a.id }}">
                     <td style="font-size: 0.75rem; color: var(--text-muted);">#{{ a.id }}</td>
                     <td>
-                        <div style="font-weight: 700; color: #fff;">{{ a.alert_type }}</div>
+                        <div style="font-weight: 700; color: #fff; white-space: nowrap;">{{ a.alert_type }}</div>
                         <span class="badge-status badge-{{ a.severity|lower }} mt-1">{{ a.severity }}</span>
                     </td>
                     <td>
-                        <span style="color: #38bdf8; font-weight: 600;">{{ a.module|capitalize }}</span>
+                        <strong style="color: #38bdf8;">{{ a.module|capitalize }}</strong>
                     </td>
-                    <td style="max-width: 280px; font-size: 0.82rem; color: var(--text-secondary);">
+                    <td style="min-width: 220px; font-size: 0.82rem; color: #cbd5e1;">
                         {{ a.description }}
                     </td>
                     <td>
                         {% if a.evidence_image %}
-                        <button type="button" onclick="openEvidenceModal('/media/{{ a.evidence_image }}', '{{ a.alert_type }} Evidence')" class="btn-secondary-surv" style="padding: 4px 8px; font-size: 0.72rem;">
+                        <button type="button" onclick="openEvidenceModal('/media/{{ a.evidence_image }}', 'Alert #{{ a.id }} Snapshot')" class="btn-secondary-surv" style="padding: 3px 8px; font-size: 0.72rem;">
                             View Frame
                         </button>
                         {% else %}
-                        <span class="text-muted" style="font-size: 0.75rem;">None</span>
+                        <span style="color: var(--text-muted); font-size: 0.75rem;">None</span>
                         {% endif %}
                     </td>
                     <td style="font-size: 0.75rem; color: var(--text-muted); white-space: nowrap;">
-                        {{ a.timestamp.strftime('%Y-%m-%d %H:%M:%S') if a.timestamp else '' }}
+                        {{ a.timestamp }}
                     </td>
                     <td>
-                        <span id="alert-status-badge-{{ a.id }}" class="badge-status {% if a.status == 'Active' %}badge-high{% elif a.status == 'Acknowledged' %}badge-medium{% else %}badge-completed{% endif %}">
+                        <span id="badge-status-{{ a.id }}" class="badge-status {% if a.status == 'Active' %}badge-high{% elif a.status == 'Acknowledged' %}badge-medium{% else %}badge-low{% endif %}">
                             {{ a.status }}
                         </span>
                     </td>
                     <td>
                         <div class="d-flex gap-1">
                             {% if a.status != 'Acknowledged' and a.status != 'Resolved' %}
-                            <button type="button" onclick="updateStatus({{ a.id }}, 'Acknowledged')" class="btn-secondary-surv" style="padding: 3px 8px; font-size: 0.72rem;" title="Acknowledge">
+                            <button type="button" onclick="updateAlertStatus({{ a.id }}, 'acknowledge')" class="btn-secondary-surv" style="padding: 3px 8px; font-size: 0.72rem;">
                                 Ack
                             </button>
                             {% endif %}
                             {% if a.status != 'Resolved' %}
-                            <button type="button" onclick="updateStatus({{ a.id }}, 'Resolved')" class="btn-primary-surv" style="padding: 3px 8px; font-size: 0.72rem;" title="Mark Resolved">
+                            <button type="button" onclick="updateAlertStatus({{ a.id }}, 'resolve')" class="btn-primary-surv" style="padding: 3px 8px; font-size: 0.72rem;">
                                 Resolve
                             </button>
-                            {% else %}
-                            <span style="font-size: 0.75rem; color: var(--color-green);">✓ Closed</span>
                             {% endif %}
                         </div>
                     </td>
@@ -150,8 +148,8 @@
                 {% else %}
                 <tr>
                     <td colspan="8" class="text-center text-muted py-5">
-                        <div style="font-size: 32px; margin-bottom: 8px;">🔔</div>
-                        <div>No alerts found matching the active filter criteria.</div>
+                        <div style="font-size: 2rem; margin-bottom: 8px;">🔔</div>
+                        <div>No alerts matched your search filters.</div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -163,27 +161,27 @@
 
 {% block scripts %}
 <script>
-async function updateStatus(alertId, newStatus) {
+async function updateAlertStatus(alertId, action) {
     try {
-        const resp = await fetch(`/alerts/${alertId}/status`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: newStatus })
-        });
+        const resp = await fetch(`/alerts/${action}/${alertId}`, { method: "POST" });
         const data = await resp.json();
         if (data.success) {
-            showToast(`Alert #${alertId} updated to ${newStatus}`, "success");
-            const badge = document.getElementById(`alert-status-badge-${alertId}`);
+            showToast(data.message, "success");
+            const badge = document.getElementById(`badge-status-${alertId}`);
             if (badge) {
-                badge.innerText = newStatus;
-                badge.className = `badge-status ${newStatus === 'Active' ? 'badge-high' : (newStatus === 'Acknowledged' ? 'badge-medium' : 'badge-completed')}`;
+                if (action === "resolve") {
+                    badge.className = "badge-status badge-low";
+                    badge.innerText = "Resolved";
+                } else {
+                    badge.className = "badge-status badge-medium";
+                    badge.innerText = "Acknowledged";
+                }
             }
-            setTimeout(() => window.location.reload(), 600);
         } else {
-            showToast("Failed to update alert: " + data.error, "error");
+            showToast(data.error || "Failed to update alert", "error");
         }
     } catch (e) {
-        showToast("Error updating alert status: " + e.message, "error");
+        showToast("Network error: " + e.message, "error");
     }
 }
 </script>

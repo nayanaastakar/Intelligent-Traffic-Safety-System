@@ -9,16 +9,16 @@
         <h1 class="page-title">Command Center Dashboard</h1>
         <div class="page-tagline">Real-time surveillance telemetry, incident analysis, and neural network status.</div>
     </div>
-    <div style="display: flex; gap: 10px;">
+    <div class="d-flex gap-2">
         <a href="{{ url_for('uploads.index') }}" class="btn-primary-surv">
             <span>+</span> <span>New Processing Job</span>
         </a>
     </div>
 </div>
 
-<!-- 6 KPI Summary Cards -->
+<!-- 6 KPI Summary Cards (2-col on mobile, 3-col on tablet, 6-col on desktop) -->
 <div class="row g-3 mb-4">
-    <div class="col-xl-2 col-md-4 col-sm-6">
+    <div class="col-xl-2 col-lg-4 col-md-4 col-6">
         <div class="surveillance-card">
             <div class="card-accent-bar accent-blue"></div>
             <div class="card-meta-title">Total Vehicles</div>
@@ -26,7 +26,7 @@
             <div class="card-sub-info"><span>🚗</span> COCO Detected</div>
         </div>
     </div>
-    <div class="col-xl-2 col-md-4 col-sm-6">
+    <div class="col-xl-2 col-lg-4 col-md-4 col-6">
         <div class="surveillance-card">
             <div class="card-accent-bar accent-green"></div>
             <div class="card-meta-title">Analysis Sessions</div>
@@ -34,7 +34,7 @@
             <div class="card-sub-info"><span>⚡</span> {{ stats.summary.success_rate }}% Success</div>
         </div>
     </div>
-    <div class="col-xl-2 col-md-4 col-sm-6">
+    <div class="col-xl-2 col-lg-4 col-md-4 col-6">
         <div class="surveillance-card">
             <div class="card-accent-bar accent-red"></div>
             <div class="card-meta-title">Accidents Flagged</div>
@@ -42,7 +42,7 @@
             <div class="card-sub-info"><span>🚨</span> Proximity Overlap</div>
         </div>
     </div>
-    <div class="col-xl-2 col-md-4 col-sm-6">
+    <div class="col-xl-2 col-lg-4 col-md-4 col-6">
         <div class="surveillance-card">
             <div class="card-accent-bar accent-amber"></div>
             <div class="card-meta-title">Overspeed Alerts</div>
@@ -50,7 +50,7 @@
             <div class="card-sub-info"><span>⚡</span> Speed Violations</div>
         </div>
     </div>
-    <div class="col-xl-2 col-md-4 col-sm-6">
+    <div class="col-xl-2 col-lg-4 col-md-4 col-6">
         <div class="surveillance-card">
             <div class="card-accent-bar accent-purple"></div>
             <div class="card-meta-title">Drowsiness Warnings</div>
@@ -58,7 +58,7 @@
             <div class="card-sub-info"><span>🥱</span> EAR Threshold</div>
         </div>
     </div>
-    <div class="col-xl-2 col-md-4 col-sm-6">
+    <div class="col-xl-2 col-lg-4 col-md-4 col-6">
         <div class="surveillance-card">
             <div class="card-accent-bar"></div>
             <div class="card-meta-title">Videos Processed</div>
@@ -92,7 +92,7 @@
                 <h3 class="panel-title"><span>🚗</span> Vehicle Category Distribution</h3>
                 <span style="font-size: 0.75rem; color: var(--text-muted);">Real-time detections</span>
             </div>
-            <div style="height: 260px; position: relative;">
+            <div style="height: 250px; position: relative;">
                 <canvas id="vehicleDistChart"></canvas>
             </div>
         </div>
@@ -103,7 +103,7 @@
                 <h3 class="panel-title"><span>📊</span> Traffic Density Classification</h3>
                 <span style="font-size: 0.75rem; color: var(--text-muted);">Volume sessions</span>
             </div>
-            <div style="height: 260px; position: relative;">
+            <div style="height: 250px; position: relative;">
                 <canvas id="densityDistChart"></canvas>
             </div>
         </div>
@@ -111,12 +111,12 @@
 </div>
 
 <!-- 5 Module Status Cards -->
-<div class="panel-header" style="margin-top: 30px;">
+<div class="panel-header" style="margin-top: 26px;">
     <h3 class="panel-title"><span>🧩</span> Computer Vision Subsystem Status</h3>
 </div>
 <div class="row g-3 mb-4">
     {% for card in stats.module_cards %}
-    <div class="col-lg col-md-6">
+    <div class="col-xl col-md-4 col-sm-6 col-12">
         <div class="dashboard-panel p-3 h-100 d-flex flex-column justify-content-between">
             <div>
                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -179,7 +179,7 @@
                                     {{ s.drowsiness_count }} events
                                 {% endif %}
                             </td>
-                            <td style="font-size: 0.75rem; color: var(--text-muted);">{{ s.created_at }}</td>
+                            <td style="font-size: 0.75rem; color: var(--text-muted); white-space: nowrap;">{{ s.created_at }}</td>
                         </tr>
                         {% else %}
                         <tr>
@@ -203,7 +203,7 @@
                 <div style="background: #0b1220; border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px 14px;">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <span class="badge-status badge-{{ a.severity|lower }}">{{ a.severity }}</span>
-                        <span style="font-size: 0.72rem; color: var(--text-muted);">{{ a.timestamp }}</span>
+                        <span style="font-size: 0.72rem; color: var(--text-muted); white-space: nowrap;">{{ a.timestamp }}</span>
                     </div>
                     <div style="font-size: 0.85rem; font-weight: 600; color: #fff;">{{ a.alert_type }}</div>
                     <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 3px;">{{ a.description }}</div>
@@ -227,6 +227,8 @@
 {% block scripts %}
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+    const isMobile = window.innerWidth < 768;
+
     // 1. Vehicle Distribution Chart
     const vLabels = {{ stats.vehicle_distribution.keys() | list | tojson }};
     const vValues = {{ stats.vehicle_distribution.values() | list | tojson }};
@@ -249,8 +251,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: "right",
-                        labels: { color: "#94a3b8", font: { size: 11 } }
+                        position: isMobile ? "bottom" : "right",
+                        labels: { color: "#94a3b8", font: { size: 11 }, boxWidth: 12 }
                     }
                 }
             }

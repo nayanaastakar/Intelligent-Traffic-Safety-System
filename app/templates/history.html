@@ -14,7 +14,7 @@
 <!-- Filters Bar -->
 <div class="dashboard-panel p-3 mb-4">
     <form method="GET" class="row g-2 align-items-center">
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-md-3">
             <select name="module" class="form-control-surv" onchange="this.form.submit()">
                 <option value="all" {% if current_filters.module == 'all' %}selected{% endif %}>All Modules</option>
                 <option value="vehicle" {% if current_filters.module == 'vehicle' %}selected{% endif %}>Vehicle Detection</option>
@@ -24,7 +24,7 @@
                 <option value="drowsiness" {% if current_filters.module == 'drowsiness' %}selected{% endif %}>Driver Drowsiness</option>
             </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-md-3">
             <select name="status" class="form-control-surv" onchange="this.form.submit()">
                 <option value="all" {% if current_filters.status == 'all' %}selected{% endif %}>All Statuses</option>
                 <option value="COMPLETED" {% if current_filters.status == 'COMPLETED' %}selected{% endif %}>Completed</option>
@@ -32,12 +32,12 @@
                 <option value="FAILED" {% if current_filters.status == 'FAILED' %}selected{% endif %}>Failed</option>
             </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-12 col-sm-6 col-md-4">
             <input type="text" name="search" class="form-control-surv" placeholder="Search by filename..." value="{{ current_filters.search }}">
         </div>
-        <div class="col-md-2 text-end">
-            <button type="submit" class="btn-primary-surv" style="font-size: 0.8rem; padding: 7px 14px;">Filter</button>
-            <a href="{{ url_for('history.index') }}" class="btn-secondary-surv" style="font-size: 0.8rem; padding: 7px 12px;">Reset</a>
+        <div class="col-12 col-sm-6 col-md-2 text-start text-md-end d-flex gap-2 justify-content-md-end">
+            <button type="submit" class="btn-primary-surv flex-grow-1 flex-md-grow-0 justify-content-center" style="font-size: 0.8rem; padding: 7px 14px;">Filter</button>
+            <a href="{{ url_for('history.index') }}" class="btn-secondary-surv flex-grow-1 flex-md-grow-0 justify-content-center" style="font-size: 0.8rem; padding: 7px 12px;">Reset</a>
         </div>
     </form>
 </div>
@@ -62,23 +62,23 @@
             <tbody>
                 {% for s in sessions %}
                 <tr id="session-row-{{ s.id }}">
-                    <td style="font-size: 0.75rem; font-family: monospace; color: #94a3b8;">
+                    <td style="font-size: 0.75rem; font-family: monospace; color: #94a3b8; white-space: nowrap;">
                         {{ s.id[:8] }}...
                     </td>
                     <td>
-                        <strong style="color: #38bdf8;">{{ s.module|capitalize }}</strong>
-                        <div style="font-size: 0.68rem; color: var(--text-muted);">{{ s.media_type }}</div>
+                        <strong style="color: #38bdf8; white-space: nowrap;">{{ s.module|capitalize }}</strong>
+                        <div style="font-size: 0.68rem; color: var(--text-muted); white-space: nowrap;">{{ s.media_type }}</div>
                     </td>
                     <td style="max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         {{ s.input_filename or 'Stream / Webcam' }}
                     </td>
-                    <td style="font-size: 0.8rem;">
+                    <td style="font-size: 0.8rem; white-space: nowrap;">
                         {{ s.duration_sec|round(2) }}s
                     </td>
                     <td>
                         <span class="badge-status badge-{{ s.status|lower }}">{{ s.status }}</span>
                     </td>
-                    <td style="font-size: 0.82rem;">
+                    <td style="font-size: 0.82rem; white-space: nowrap;">
                         {% if s.module == 'vehicle' %}
                             {{ s.total_vehicles }} Vehicles
                         {% elif s.module == 'traffic' %}
@@ -94,12 +94,12 @@
                     <td>
                         <div class="d-flex gap-1">
                             {% if s.evidence_path %}
-                            <button type="button" onclick="openEvidenceModal('/media/{{ s.evidence_path }}', 'Session {{ s.id[:8] }} Evidence')" class="btn-secondary-surv" style="padding: 3px 8px; font-size: 0.72rem;">
+                            <button type="button" onclick="openEvidenceModal('/media/{{ s.evidence_path }}', 'Session {{ s.id[:8] }} Evidence')" class="btn-secondary-surv" style="padding: 3px 8px; font-size: 0.72rem; white-space: nowrap;">
                                 Evidence
                             </button>
                             {% endif %}
                             {% if s.output_path %}
-                            <a href="/media/{{ s.output_path }}" download class="btn-secondary-surv" style="padding: 3px 8px; font-size: 0.72rem;">
+                            <a href="/media/{{ s.output_path }}" download class="btn-secondary-surv" style="padding: 3px 8px; font-size: 0.72rem; white-space: nowrap;">
                                 Download
                             </a>
                             {% endif %}

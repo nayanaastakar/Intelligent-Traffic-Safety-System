@@ -3,34 +3,68 @@
 document.addEventListener("DOMContentLoaded", () => {
     // 1. Mobile Drawer and Sidebar Toggle
     const toggleBtn = document.getElementById("sidebarToggle");
-    const sidebar = document.querySelector(".app-sidebar");
-    
+    const closeBtn = document.getElementById("sidebarCloseBtn");
+    const backdrop = document.getElementById("sidebarBackdrop");
+    const sidebar = document.getElementById("appSidebar") || document.querySelector(".app-sidebar");
+    const main = document.querySelector(".app-main");
+
+    function openMobileDrawer() {
+        if (!sidebar) return;
+        sidebar.classList.add("show-drawer");
+        if (backdrop) backdrop.classList.add("show");
+        document.body.classList.add("drawer-open");
+    }
+
+    function closeMobileDrawer() {
+        if (!sidebar) return;
+        sidebar.classList.remove("show-drawer");
+        if (backdrop) backdrop.classList.remove("show");
+        document.body.classList.remove("drawer-open");
+    }
+
     if (toggleBtn && sidebar) {
-        toggleBtn.addEventListener("click", () => {
+        toggleBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
             if (window.innerWidth <= 992) {
-                sidebar.classList.toggle("show-drawer");
+                if (sidebar.classList.contains("show-drawer")) {
+                    closeMobileDrawer();
+                } else {
+                    openMobileDrawer();
+                }
             } else {
                 sidebar.classList.toggle("collapsed");
-                const main = document.querySelector(".app-main");
                 if (main) {
-                    if (sidebar.classList.contains("collapsed")) {
-                        sidebar.style.width = "78px";
-                        main.style.marginLeft = "78px";
-                    } else {
-                        sidebar.style.width = "270px";
-                        main.style.marginLeft = "270px";
-                    }
+                    main.classList.toggle("sidebar-collapsed");
                 }
             }
         });
     }
 
-    // Close drawer when clicking outside on mobile
-    document.addEventListener("click", (e) => {
-        if (window.innerWidth <= 992 && sidebar && sidebar.classList.contains("show-drawer")) {
-            if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
-                sidebar.classList.remove("show-drawer");
+    if (closeBtn) {
+        closeBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            closeMobileDrawer();
+        });
+    }
+
+    if (backdrop) {
+        backdrop.addEventListener("click", closeMobileDrawer);
+    }
+
+    // Auto-close drawer on route link click on mobile
+    const navLinks = sidebar ? sidebar.querySelectorAll(".nav-item-link") : [];
+    navLinks.forEach(link => {
+        link.addEventListener("click", () => {
+            if (window.innerWidth <= 992) {
+                closeMobileDrawer();
             }
+        });
+    });
+
+    // Handle screen resize
+    window.addEventListener("resize", () => {
+        if (window.innerWidth > 992) {
+            closeMobileDrawer();
         }
     });
 });
@@ -54,13 +88,13 @@ window.playWebBeep = function(freq = 880, durationMs = 250) {
     }
 };
 
-// Global Toast Notifications
+// Global Toast Notifications (Responsive positioning)
 window.showToast = function(message, type = "info") {
     let container = document.getElementById("toastContainer");
     if (!container) {
         container = document.createElement("div");
         container.id = "toastContainer";
-        container.style.cssText = "position: fixed; bottom: 24px; right: 24px; z-index: 1090; display: flex; flex-direction: column; gap: 10px;";
+        container.className = "toast-notifications-container";
         document.body.appendChild(container);
     }
 
@@ -73,21 +107,10 @@ window.showToast = function(message, type = "info") {
     };
     const c = colors[type] || colors.info;
 
-    toast.style.cssText = `
-        background-color: ${c.bg};
-        border: 1px solid ${c.border};
-        color: ${c.text};
-        padding: 12px 18px;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        min-width: 260px;
-        max-width: 400px;
-        animation: slideInToast 0.3s ease;
-    `;
+    toast.className = "surv-toast-item";
+    toast.style.backgroundColor = c.bg;
+    toast.style.borderColor = c.border;
+    toast.style.color = c.text;
     toast.innerHTML = `<strong>${c.icon}</strong> <span>${message}</span>`;
     container.appendChild(toast);
 
@@ -97,8 +120,9 @@ window.showToast = function(message, type = "info") {
 
     setTimeout(() => {
         toast.style.opacity = "0";
-        toast.style.transition = "opacity 0.4s";
-        setTimeout(() => toast.remove(), 400);
+        toast.style.transform = "translateY(10px)";
+        toast.style.transition = "all 0.3s ease";
+        setTimeout(() => toast.remove(), 350);
     }, 4000);
 };
 
@@ -111,14 +135,14 @@ window.openEvidenceModal = function(imageSrc, title = "Incident Evidence Frame")
         modal.className = "modal-backdrop-custom";
         modal.innerHTML = `
             <div class="modal-content-custom">
-                <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
-                    <h5 id="evidenceModalTitle" style="margin: 0; color: #fff; font-size: 1rem;">Evidence Frame</h5>
-                    <button type="button" onclick="closeEvidenceModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer;">&times;</button>
+                <div style="padding: 14px 18px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                    <h5 id="evidenceModalTitle" style="margin: 0; color: #fff; font-size: 0.95rem; font-weight: 700;">Evidence Frame</h5>
+                    <button type="button" onclick="closeEvidenceModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer; line-height: 1;" aria-label="Close">&times;</button>
                 </div>
-                <div style="padding: 20px; text-align: center;">
-                    <img id="evidenceModalImg" src="" style="max-width: 100%; border-radius: 8px; border: 1px solid var(--border-subtle);" />
+                <div style="padding: 16px; text-align: center; max-height: 70vh; overflow-y: auto;">
+                    <img id="evidenceModalImg" src="" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--border-subtle);" alt="Evidence Snapshot" />
                 </div>
-                <div style="padding: 14px 20px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 10px;">
+                <div style="padding: 12px 18px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 10px;">
                     <a id="evidenceDownloadBtn" href="" download class="btn-primary-surv" style="font-size: 0.8rem; padding: 6px 14px;">Download Frame</a>
                     <button type="button" onclick="closeEvidenceModal()" class="btn-secondary-surv" style="font-size: 0.8rem; padding: 6px 14px;">Close</button>
                 </div>
