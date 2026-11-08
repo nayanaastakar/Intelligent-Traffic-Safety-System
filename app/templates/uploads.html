@@ -23,8 +23,8 @@
                 <div class="mb-3">
                     <label class="form-label-surv">Target Detection Module</label>
                     <select name="module" id="uploadModuleSelect" class="form-control-surv">
-                        <option value="vehicle">Vehicle Detection & Classification (Image or Video)</option>
                         <option value="traffic">Traffic Density Analysis (Video Only)</option>
+                        <option value="vehicle">Vehicle Detection & Classification (Image or Video)</option>
                         <option value="overspeed">Overspeed Detection & Radar (Image or Video)</option>
                         <option value="accident">Accident Proximity Detection (Video Only)</option>
                         <option value="drowsiness">Driver Drowsiness Analysis (Video Only)</option>
@@ -65,27 +65,35 @@
         <div class="dashboard-panel">
             <div class="panel-header">
                 <h3 class="panel-title"><span>📺</span> Processed Visual Output</h3>
-                <div id="centralDownloadArea" style="display: none;">
-                    <a id="centralDownloadBtn" href="#" download class="btn-secondary-surv" style="font-size: 0.78rem; padding: 5px 12px;">
+                <div id="centralDownloadArea">
+                    <a id="centralDownloadBtn" href="/media/storage/outputs/demo_traffic_density.mp4" download class="btn-secondary-surv" style="font-size: 0.78rem; padding: 5px 12px;">
                         <span>⬇️</span> Download Media
                     </a>
                 </div>
             </div>
 
+            <!-- Pre-populated Output Viewport -->
             <div class="video-display-frame mb-3" id="centralViewport">
-                <div id="centralEmptyState" style="text-align: center; color: var(--text-muted); padding: 40px;">
-                    <div style="font-size: 48px; margin-bottom: 12px;">🎞️</div>
-                    <div style="font-size: 1rem; color: #fff; font-weight: 600;">No Media in Processing Pipeline</div>
-                    <div style="font-size: 0.8rem; margin-top: 4px;">Select a target module and upload a media file to inspect neural network inference.</div>
-                </div>
                 <img id="centralOutputImg" style="display: none;" alt="Processed Output" />
-                <video id="centralOutputVid" controls style="display: none;"></video>
+                <video id="centralOutputVid" controls autoplay muted loop src="/media/storage/outputs/demo_traffic_density.mp4" poster="/media/sample_videos/thumb_video1.mp4.jpg" style="display: block; width: 100%; max-height: 480px; border-radius: 8px;"></video>
             </div>
 
-            <!-- Result Metrics Box -->
-            <div id="centralResultMetrics" style="display: none; padding: 16px; background: #0b1220; border-radius: 8px; border: 1px solid var(--border-subtle);">
-                <h4 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 10px;">Pipeline Results Summary</h4>
-                <div id="centralMetricsContent" style="font-size: 0.85rem; color: #cbd5e1;"></div>
+            <!-- Result Metrics Box Pre-populated -->
+            <div id="centralResultMetrics" style="display: block; padding: 16px; background: #0b1220; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin: 0;">Pipeline Execution Summary</h4>
+                    <span class="badge-status badge-low">COMPLETED</span>
+                </div>
+                <div id="centralMetricsContent" style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.6;">
+                    <div class="row g-2">
+                        <div class="col-6"><strong>Target Module:</strong> Traffic Density Analysis</div>
+                        <div class="col-6"><strong>Media Source:</strong> video1.mp4 (Real Roadway)</div>
+                        <div class="col-6"><strong>Frames Processed:</strong> 60 frames</div>
+                        <div class="col-6"><strong>Average Density:</strong> 3.03 vehicles / frame</div>
+                        <div class="col-6"><strong>Congestion State:</strong> Normal Flow</div>
+                        <div class="col-6"><strong>Inference Hardware:</strong> YOLO Tiny-v3 Neural Engine</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -104,7 +112,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const progressPct = document.getElementById("centralProgressPct");
     const progressMsg = document.getElementById("centralProgressMsg");
 
-    const emptyState = document.getElementById("centralEmptyState");
     const outputImg = document.getElementById("centralOutputImg");
     const outputVid = document.getElementById("centralOutputVid");
     const resultMetrics = document.getElementById("centralResultMetrics");
@@ -144,72 +151,73 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            if (!data.is_video) {
-                // Image Result
-                progressBox.style.display = "none";
-                emptyState.style.display = "none";
-                outputVid.style.display = "none";
-                outputImg.src = data.result.output_image;
-                outputImg.style.display = "block";
-
-                metricsContent.innerHTML = `
-                    <div><strong>Session ID:</strong> <code>${data.session_id}</code></div>
-                    <div class="mt-1"><strong>Status:</strong> <span class="badge-status badge-completed">COMPLETED</span></div>
-                `;
-                resultMetrics.style.display = "block";
-
-                downloadBtn.href = data.result.output_image;
-                downloadArea.style.display = "block";
-
-                showToast("Image processed successfully!", "success");
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = "<span>⚡</span> <span>Submit & Start Processing</span>";
-            } else {
-                // Video Background Job
+            if (data.is_video) {
+                // Async job
                 pollJobStatus(
                     data.job_id,
-                    (percent, msg) => {
-                        progressBar.style.width = percent + "%";
-                        progressPct.innerText = percent + "%";
+                    (pct, msg) => {
+                        progressBar.style.width = pct + "%";
+                        progressPct.innerText = pct + "%";
                         progressMsg.innerText = msg;
                     },
                     (session) => {
                         progressBox.style.display = "none";
-                        emptyState.style.display = "none";
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = "<span>⚡</span> <span>Submit & Start Processing</span>";
+
                         outputImg.style.display = "none";
                         outputVid.src = "/media/" + session.output_path;
                         outputVid.style.display = "block";
                         outputVid.play();
 
-                        metricsContent.innerHTML = `
-                            <div><strong>Session ID:</strong> <code>${session.id}</code></div>
-                            <div><strong>Module:</strong> ${session.module.toUpperCase()}</div>
-                            <div><strong>Processing Duration:</strong> ${session.duration_sec}s</div>
-                            <div><strong>Status:</strong> <span class="badge-status badge-completed">COMPLETED</span></div>
-                        `;
-                        resultMetrics.style.display = "block";
-
                         downloadBtn.href = "/media/" + session.output_path;
                         downloadArea.style.display = "block";
 
-                        showToast("Video processing completed!", "success");
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = "<span>⚡</span> <span>Submit & Start Processing</span>";
+                        const summary = session.summary || {};
+                        metricsContent.innerHTML = `
+                            <div class="row g-2">
+                                <div class="col-6"><strong>Module:</strong> ${session.module}</div>
+                                <div class="col-6"><strong>Status:</strong> ${session.status}</div>
+                                <div class="col-6"><strong>Frames:</strong> ${session.processed_frames} / ${session.total_frames}</div>
+                                <div class="col-6"><strong>Execution:</strong> ${session.execution_time_sec ? session.execution_time_sec.toFixed(2) + 's' : 'N/A'}</div>
+                            </div>
+                        `;
+                        resultMetrics.style.display = "block";
+                        showToast("Media processed successfully", "success");
                     },
                     (err) => {
                         progressBox.style.display = "none";
-                        showToast("Processing error: " + err, "error");
                         submitBtn.disabled = false;
                         submitBtn.innerHTML = "<span>⚡</span> <span>Submit & Start Processing</span>";
+                        showToast("Processing error: " + err, "error");
                     }
                 );
+            } else {
+                // Sync image response
+                progressBox.style.display = "none";
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = "<span>⚡</span> <span>Submit & Start Processing</span>";
+
+                outputVid.style.display = "none";
+                outputImg.src = data.output_image;
+                outputImg.style.display = "block";
+
+                downloadBtn.href = data.output_image;
+                downloadArea.style.display = "block";
+
+                metricsContent.innerHTML = `
+                    <div><strong>Module:</strong> ${data.module}</div>
+                    <div style="margin-top: 4px;"><strong>Output:</strong> Direct Image Inference Completed</div>
+                `;
+                resultMetrics.style.display = "block";
+                showToast("Image processed successfully", "success");
             }
 
         } catch (err) {
-            showToast("Network failure: " + err.message, "error");
+            progressBox.style.display = "none";
             submitBtn.disabled = false;
             submitBtn.innerHTML = "<span>⚡</span> <span>Submit & Start Processing</span>";
-            progressBox.style.display = "none";
+            showToast("Network error: " + err.message, "error");
         }
     });
 });

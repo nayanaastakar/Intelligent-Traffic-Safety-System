@@ -23,13 +23,15 @@ def detect():
     session_id = uuid.uuid4().hex
 
     if mode == "image":
-        simulated_speed = float(request.form.get("simulated_speed", 85))
+        simulated_speed = float(request.form.get("simulated_speed", 88))
         input_path = None
         original_name = None
 
         if source_type == "sample":
-            input_path = os.path.join(Config.SAMPLE_DATA_FOLDER, "sample_car.png")
-            original_name = "sample_car.png"
+            input_path = os.path.join(Config.SAMPLE_DATA_FOLDER, "real_highway_car.jpg")
+            if not os.path.exists(input_path):
+                input_path = os.path.join(Config.SAMPLE_DATA_FOLDER, "sample_car.png")
+            original_name = "real_highway_car.jpg"
         else:
             file = request.files.get("file")
             if not file or file.filename == "":
@@ -89,8 +91,10 @@ def detect():
         original_name = None
 
         if source_type == "sample":
-            input_path = os.path.join(Config.SAMPLE_DATA_FOLDER, "sample_traffic.mp4")
-            original_name = "sample_traffic.mp4"
+            input_path = os.path.join(Config.BASE_DIR, "sample_videos", "video4.mp4")
+            if not os.path.exists(input_path):
+                input_path = os.path.join(Config.SAMPLE_DATA_FOLDER, "sample_traffic.mp4")
+            original_name = "video4.mp4"
         else:
             file = request.files.get("file")
             if not file or file.filename == "":

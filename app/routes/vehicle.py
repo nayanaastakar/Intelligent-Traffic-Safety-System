@@ -17,25 +17,31 @@ def index():
 @bp.route("/detect", methods=["POST"])
 def detect():
     source_type = request.form.get("source_type", "sample") # sample or upload
-    conf_thresh = float(request.form.get("conf_threshold", 0.4))
+    conf_thresh = float(request.form.get("conf_threshold", 0.25))
     
     input_path = None
     original_name = None
     media_type = "image"
 
     if source_type == "sample":
-        sample_choice = request.form.get("sample_file", "sample_highway.png")
-        if sample_choice == "sample_traffic.mp4":
-            input_path = os.path.join(Config.SAMPLE_DATA_FOLDER, "sample_traffic.mp4")
-            original_name = "sample_traffic.mp4"
+        sample_choice = request.form.get("sample_file", "real_traffic_intersection.jpg")
+        if sample_choice in ["video1.mp4", "sample_traffic.mp4"]:
+            input_path = os.path.join(Config.BASE_DIR, "sample_videos", "video1.mp4")
+            if not os.path.exists(input_path):
+                input_path = os.path.join(Config.SAMPLE_DATA_FOLDER, "sample_traffic.mp4")
+            original_name = "video1.mp4"
             media_type = "video"
-        elif sample_choice == "sample_car.png":
-            input_path = os.path.join(Config.SAMPLE_DATA_FOLDER, "sample_car.png")
-            original_name = "sample_car.png"
+        elif sample_choice in ["real_highway_car.jpg", "sample_car.png"]:
+            input_path = os.path.join(Config.SAMPLE_DATA_FOLDER, "real_highway_car.jpg")
+            if not os.path.exists(input_path):
+                input_path = os.path.join(Config.SAMPLE_DATA_FOLDER, "sample_car.png")
+            original_name = "real_highway_car.jpg"
             media_type = "image"
         else:
-            input_path = os.path.join(Config.SAMPLE_DATA_FOLDER, "sample_highway.png")
-            original_name = "sample_highway.png"
+            input_path = os.path.join(Config.SAMPLE_DATA_FOLDER, "real_traffic_intersection.jpg")
+            if not os.path.exists(input_path):
+                input_path = os.path.join(Config.SAMPLE_DATA_FOLDER, "sample_highway.png")
+            original_name = "real_traffic_intersection.jpg"
             media_type = "image"
     else:
         file = request.files.get("file")

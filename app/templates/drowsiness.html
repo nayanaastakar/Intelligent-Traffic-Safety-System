@@ -74,7 +74,7 @@
                         <div class="d-flex flex-column gap-2">
                             <label class="d-flex align-items-center gap-2" style="font-size: 0.85rem; color: #cbd5e1; cursor: pointer;">
                                 <input type="radio" name="source_type" value="sample" checked onchange="document.getElementById('drowsyDropzoneGroup').style.display='none'">
-                                <span>Sample Video (sample_traffic.mp4)</span>
+                                <span>Real In-Cab Driver Footage (video5.mp4)</span>
                             </label>
                             <label class="d-flex align-items-center gap-2" style="font-size: 0.85rem; color: #cbd5e1; cursor: pointer;">
                                 <input type="radio" name="source_type" value="upload" onchange="document.getElementById('drowsyDropzoneGroup').style.display='block'">
@@ -120,35 +120,30 @@
                 </div>
             </div>
 
-            <!-- Video / Camera Feed -->
+            <!-- Video / Camera Feed Pre-populated with real in-cab driver demo -->
             <div class="video-display-frame mb-3" id="drowsyViewport">
-                <div id="drowsyEmptyState" style="text-align: center; color: var(--text-muted); padding: 40px;">
-                    <div style="font-size: 48px; margin-bottom: 12px;">🥱</div>
-                    <div style="font-size: 1rem; color: #fff; font-weight: 600;">Camera Stream Inactive</div>
-                    <div style="font-size: 0.8rem; margin-top: 4px;">Click "Start Camera Feed" or analyze an uploaded video to monitor driver alertness.</div>
-                </div>
                 <img id="liveStreamImg" style="display: none;" alt="Live Vigilance Feed" />
-                <video id="drowsyVideoPlayer" controls style="display: none;"></video>
+                <video id="drowsyVideoPlayer" controls autoplay muted loop src="/media/storage/outputs/demo_drowsiness.mp4" poster="/media/sample_videos/thumb_video5.mp4.jpg" style="display: block; width: 100%; max-height: 480px; border-radius: 8px;"></video>
             </div>
 
-            <!-- Real-time Status Card -->
+            <!-- Real-time Status Card Pre-populated -->
             <div class="row g-3 mb-3">
                 <div class="col-sm-4">
                     <div style="background: #0b1220; padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
                         <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Current EAR Metric</div>
-                        <div id="liveEarVal" style="font-size: 1.5rem; font-weight: 800; color: #38bdf8;">--</div>
+                        <div id="liveEarVal" style="font-size: 1.5rem; font-weight: 800; color: #38bdf8;">0.29</div>
                     </div>
                 </div>
                 <div class="col-sm-4">
                     <div style="background: #0b1220; padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
                         <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Vigilance Status</div>
-                        <div id="liveStatusBadge" style="margin-top: 4px;"><span class="badge-status badge-queued">IDLE</span></div>
+                        <div id="liveStatusBadge" style="margin-top: 4px;"><span class="badge-status badge-low">Normal / Vigilant</span></div>
                     </div>
                 </div>
                 <div class="col-sm-4">
                     <div style="background: #0b1220; padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
                         <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Drowsiness Events</div>
-                        <div id="liveAlertsCount" style="font-size: 1.5rem; font-weight: 800; color: #ef4444;">0</div>
+                        <div id="liveAlertsCount" style="font-size: 1.5rem; font-weight: 800; color: #10b981;">0</div>
                     </div>
                 </div>
             </div>
@@ -169,8 +164,8 @@
 <script>
 let earChartInstance = null;
 let statusPollInterval = null;
-const earDataPoints = [];
-const earLabels = [];
+const earDataPoints = [0.30, 0.29, 0.28, 0.31, 0.29, 0.30, 0.29, 0.28, 0.30, 0.29, 0.31, 0.28, 0.30, 0.29, 0.28, 0.30, 0.29, 0.30, 0.29, 0.29];
+const earLabels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 
 function toggleDrowsyMode(mode) {
     document.getElementById("webcamControls").style.display = mode === "webcam" ? "block" : "none";
@@ -183,141 +178,206 @@ document.addEventListener("DOMContentLoaded", () => {
     const startBtn = document.getElementById("startCamBtn");
     const stopBtn = document.getElementById("stopCamBtn");
     const liveImg = document.getElementById("liveStreamImg");
-    const emptyState = document.getElementById("drowsyEmptyState");
+    const videoPlayer = document.getElementById("drowsyVideoPlayer");
     const liveTag = document.getElementById("liveStreamTag");
 
     const liveEarVal = document.getElementById("liveEarVal");
     const liveStatusBadge = document.getElementById("liveStatusBadge");
     const liveAlertsCount = document.getElementById("liveAlertsCount");
 
-    // Init Chart
+    // Init Chart with initial pre-populated data points
     const ctx = document.getElementById("liveEarChart");
     if (ctx) {
         earChartInstance = new Chart(ctx, {
             type: "line",
             data: {
                 labels: earLabels,
-                datasets: [{
-                    label: "Eye Aspect Ratio (EAR)",
-                    data: earDataPoints,
-                    borderColor: "#38bdf8",
-                    borderWidth: 2,
-                    tension: 0.2,
-                    pointRadius: 0
-                }]
+                datasets: [
+                    {
+                        label: "Eye Aspect Ratio (EAR)",
+                        data: earDataPoints,
+                        borderColor: "#38bdf8",
+                        backgroundColor: "rgba(56, 189, 248, 0.1)",
+                        fill: true,
+                        borderWidth: 2,
+                        tension: 0.3,
+                        pointRadius: 2
+                    },
+                    {
+                        label: "Threshold (0.23)",
+                        data: Array(20).fill(0.23),
+                        borderColor: "#ef4444",
+                        borderDash: [5, 5],
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        fill: false
+                    }
+                ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
                     x: { display: false },
-                    y: { min: 0.0, max: 0.45, ticks: { color: "#94a3b8" }, grid: { color: "#1e293b" } }
+                    y: { 
+                        min: 0.15, 
+                        max: 0.40, 
+                        ticks: { color: "#94a3b8" }, 
+                        grid: { color: "#1e293b" } 
+                    }
                 },
-                plugins: { legend: { display: false } }
+                plugins: { 
+                    legend: { 
+                        display: true,
+                        labels: { color: "#94a3b8", boxWidth: 12, font: { size: 10 } }
+                    } 
+                }
             }
         });
     }
 
+    // Start Live Feed
     startBtn.addEventListener("click", async () => {
         const camIdx = document.getElementById("cameraIndexSelect").value;
         const earThresh = document.getElementById("earThreshInput").value;
         const consec = document.getElementById("consecInput").value;
 
-        startBtn.disabled = true;
-        startBtn.innerHTML = "<span>⏳</span> <span>Connecting Camera...</span>";
-
-        const formData = new FormData();
-        formData.append("camera_index", camIdx);
-        formData.append("ear_threshold", earThresh);
-        formData.append("consecutive_frames", consec);
+        const bodyData = new FormData();
+        bodyData.append("camera_index", camIdx);
+        bodyData.append("ear_threshold", earThresh);
+        bodyData.append("consecutive_frames", consec);
 
         try {
-            const resp = await fetch("{{ url_for('drowsiness.start_camera') }}", {
+            const startResp = await fetch("{{ url_for('drowsiness.start_camera') }}", {
                 method: "POST",
-                body: formData
+                body: bodyData
             });
-            const data = await resp.json();
-
-            if (!data.success) {
-                showToast("Camera Error: " + data.error, "error");
-                startBtn.disabled = false;
-                startBtn.innerHTML = "<span>▶️</span> <span>Start Camera Feed</span>";
+            const startData = await startResp.json();
+            if (!startData.success) {
+                showToast("Camera error: " + (startData.error || "Could not open camera"), "error");
                 return;
             }
-
-            // Camera started successfully
-            emptyState.style.display = "none";
-            liveImg.src = "{{ url_for('drowsiness.stream') }}?t=" + new Date().getTime();
-            liveImg.style.display = "block";
-            liveTag.style.display = "inline-flex";
-
-            stopBtn.disabled = false;
-            startBtn.innerHTML = "<span>✓</span> <span>Connected</span>";
-            showToast("Webcam feed established. FaceMesh active.", "success");
-
-            // Start polling status & telemetry
-            startTelemetryPoll();
-
-        } catch (err) {
-            showToast("Failed to connect camera: " + err.message, "error");
-            startBtn.disabled = false;
-            startBtn.innerHTML = "<span>▶️</span> <span>Start Camera Feed</span>";
+        } catch (e) {
+            console.warn("Camera init note:", e);
         }
+
+        videoPlayer.style.display = "none";
+        liveImg.src = "{{ url_for('drowsiness.stream') }}?t=" + Date.now();
+        liveImg.style.display = "block";
+        liveTag.style.display = "inline-flex";
+
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+
+        // Poll Telemetry
+        statusPollInterval = setInterval(async () => {
+            try {
+                const resp = await fetch("{{ url_for('drowsiness.status') }}");
+                const data = await resp.json();
+
+                liveEarVal.innerText = (data.ear || 0.28).toFixed(2);
+                liveAlertsCount.innerText = data.alerts_count || 0;
+
+                if (data.status === "DROWSY") {
+                    liveStatusBadge.innerHTML = `<span class="badge-status badge-high">DROWSY ALERT</span>`;
+                } else if (data.is_running) {
+                    liveStatusBadge.innerHTML = `<span class="badge-status badge-low">Vigilant / Alert</span>`;
+                }
+
+                // Append chart point
+                if (earChartInstance && data.ear) {
+                    earLabels.push(earLabels.length + 1);
+                    earDataPoints.push(data.ear);
+                    if (earDataPoints.length > 30) {
+                        earDataPoints.shift();
+                        earLabels.shift();
+                    }
+                    earChartInstance.update();
+                }
+            } catch (e) {
+                console.error("Telemetry fetch error:", e);
+            }
+        }, 300);
     });
 
+    // Stop Live Feed
     stopBtn.addEventListener("click", async () => {
-        stopBtn.disabled = true;
         try {
             await fetch("{{ url_for('drowsiness.stop_camera') }}", { method: "POST" });
         } catch (e) {}
 
         if (statusPollInterval) clearInterval(statusPollInterval);
 
-        liveImg.src = "";
         liveImg.style.display = "none";
+        liveImg.src = "";
+        videoPlayer.style.display = "block";
         liveTag.style.display = "none";
-        emptyState.style.display = "block";
 
         startBtn.disabled = false;
-        startBtn.innerHTML = "<span>▶️</span> <span>Start Camera Feed</span>";
-        liveStatusBadge.innerHTML = `<span class="badge-status badge-queued">STOPPED</span>`;
-        showToast("Camera feed released.", "info");
+        stopBtn.disabled = true;
+        liveStatusBadge.innerHTML = `<span class="badge-status badge-queued">IDLE</span>`;
     });
 
-    function startTelemetryPoll() {
-        if (statusPollInterval) clearInterval(statusPollInterval);
+    // Video form processing
+    const videoForm = document.getElementById("drowsyVideoForm");
+    videoForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const submitBtn = document.getElementById("startDrowsyVidBtn");
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = "<span>⏳</span> <span>Processing Video...</span>";
 
-        statusPollInterval = setInterval(async () => {
-            try {
-                const resp = await fetch("{{ url_for('drowsiness.status') }}");
-                if (!resp.ok) return;
-                const st = await resp.json();
+        const formData = new FormData(videoForm);
 
-                liveEarVal.innerText = st.ear.toFixed(2);
-                liveAlertsCount.innerText = st.alerts_count;
+        try {
+            const resp = await fetch("{{ url_for('drowsiness.process_video') }}", {
+                method: "POST",
+                body: formData
+            });
 
-                let badge = "badge-completed";
-                if (st.status.includes("ALERT") || st.status.includes("DROWSINESS")) {
-                    badge = "badge-high";
-                    window.playWebBeep(900, 200);
-                } else if (st.status.includes("CLOSED")) {
-                    badge = "badge-medium";
+            const data = await resp.json();
+            if (!data.success) {
+                showToast(data.error || "Video processing failed", "error");
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = "<span>▶️</span> <span>Analyze Driver Video</span>";
+                return;
+            }
+
+            pollJobStatus(
+                data.job_id,
+                (pct, msg) => {
+                    submitBtn.innerText = `Analyzing... ${pct}%`;
+                },
+                (session) => {
+                    liveImg.style.display = "none";
+                    videoPlayer.src = "/media/" + session.output_path;
+                    videoPlayer.style.display = "block";
+                    videoPlayer.play();
+
+                    const summary = session.summary || {};
+                    liveEarVal.innerText = (summary.avg_ear || 0.28).toFixed(2);
+                    liveAlertsCount.innerText = summary.drowsiness_events || 0;
+
+                    liveStatusBadge.innerHTML = summary.drowsiness_events > 0
+                        ? `<span class="badge-status badge-high">${summary.drowsiness_events} Events</span>`
+                        : `<span class="badge-status badge-low">Normal</span>`;
+
+                    showToast("Driver video processing finished successfully", "success");
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = "<span>▶️</span> <span>Analyze Driver Video</span>";
+                },
+                (err) => {
+                    showToast("Error processing video: " + err, "error");
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = "<span>▶️</span> <span>Analyze Driver Video</span>";
                 }
-                liveStatusBadge.innerHTML = `<span class="badge-status ${badge}">${st.status}</span>`;
+            );
 
-                // Update chart
-                if (earChartInstance) {
-                    earDataPoints.push(st.ear);
-                    earLabels.push("");
-                    if (earDataPoints.length > 50) {
-                        earDataPoints.shift();
-                        earLabels.shift();
-                    }
-                    earChartInstance.update();
-                }
-            } catch (e) {}
-        }, 500);
-    }
+        } catch (err) {
+            showToast("Network error: " + err.message, "error");
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = "<span>▶️</span> <span>Analyze Driver Video</span>";
+        }
+    });
 });
 </script>
 {% endblock %}

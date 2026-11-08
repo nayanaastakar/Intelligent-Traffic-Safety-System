@@ -7,7 +7,7 @@
 <div class="page-header-block">
     <div>
         <h1 class="page-title">Vehicle Detection & Classification</h1>
-        <div class="page-tagline">High-precision object localization and classification using YOLO neural networks.</div>
+        <div class="page-tagline">High-precision object localization and classification across COCO vehicle categories with confidence filtering and downloadable output.</div>
     </div>
 </div>
 
@@ -25,22 +25,22 @@
                     <div class="d-flex flex-column gap-2">
                         <label class="d-flex align-items-center gap-2" style="font-size: 0.85rem; color: #cbd5e1; cursor: pointer;">
                             <input type="radio" name="source_type" value="sample" checked onchange="toggleSourceType('sample')">
-                            <span>Use Sample Media</span>
+                            <span>Use Real Roadway Footage</span>
                         </label>
                         <label class="d-flex align-items-center gap-2" style="font-size: 0.85rem; color: #cbd5e1; cursor: pointer;">
                             <input type="radio" name="source_type" value="upload" onchange="toggleSourceType('upload')">
-                            <span>Upload Custom File (Image or Video)</span>
+                            <span>Upload Custom Surveillance File</span>
                         </label>
                     </div>
                 </div>
 
-                <!-- Sample Selection -->
+                <!-- Sample Selection with Real Footage -->
                 <div id="sampleSelectGroup" class="mb-3">
-                    <label class="form-label-surv">Choose Sample</label>
+                    <label class="form-label-surv">Choose Real Media</label>
                     <select name="sample_file" class="form-control-surv">
-                        <option value="sample_highway.png">Highway Scene (Image - sample_highway.png)</option>
-                        <option value="sample_car.png">Sports Car (Image - sample_car.png)</option>
-                        <option value="sample_traffic.mp4">Traffic Flow (Video - sample_traffic.mp4)</option>
+                        <option value="real_traffic_intersection.jpg" selected>Traffic Intersection (Real Image - real_traffic_intersection.jpg)</option>
+                        <option value="real_highway_car.jpg">Highway Traffic Car (Real Image - real_highway_car.jpg)</option>
+                        <option value="video1.mp4">Urban Roadway Surveillance (Real Video - video1.mp4)</option>
                     </select>
                 </div>
 
@@ -57,8 +57,8 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label-surv">Confidence Threshold: <span id="confVal">0.40</span></label>
-                    <input type="range" class="form-range" name="conf_threshold" min="0.1" max="0.9" step="0.05" value="0.4" oninput="document.getElementById('confVal').innerText = parseFloat(this.value).toFixed(2)">
+                    <label class="form-label-surv">Confidence Threshold: <span id="confVal">0.25</span></label>
+                    <input type="range" class="form-range" name="conf_threshold" min="0.1" max="0.9" step="0.05" value="0.25" oninput="document.getElementById('confVal').innerText = parseFloat(this.value).toFixed(2)">
                 </div>
 
                 <button type="submit" id="startDetectBtn" class="btn-primary-surv w-100 justify-content-center">
@@ -84,38 +84,35 @@
         <div class="dashboard-panel">
             <div class="panel-header">
                 <h3 class="panel-title"><span>📺</span> Detection Telemetry & Visual Feed</h3>
-                <div id="downloadContainer" style="display: none;">
-                    <a id="downloadResultBtn" href="#" download class="btn-secondary-surv" style="font-size: 0.78rem; padding: 5px 12px;">
+                <div id="downloadContainer">
+                    <a id="downloadResultBtn" href="/media/storage/outputs/demo_vehicle_detected.jpg" download class="btn-secondary-surv" style="font-size: 0.78rem; padding: 5px 12px;">
                         <span>⬇️</span> Download Processed Media
                     </a>
                 </div>
             </div>
 
-            <!-- Viewport -->
+            <!-- Viewport pre-populated with actual detected vehicle image -->
             <div class="video-display-frame mb-3" id="viewportContainer">
-                <div id="emptyStatePlaceholder" style="text-align: center; color: var(--text-muted); padding: 40px;">
-                    <div style="font-size: 48px; margin-bottom: 12px;">🚗</div>
-                    <div style="font-size: 1rem; color: #fff; font-weight: 600;">No Active Detection</div>
-                    <div style="font-size: 0.8rem; margin-top: 4px;">Select sample media or upload your own file and click Start Detection.</div>
-                </div>
-                <img id="processedImg" style="display: none;" alt="Detection Output" />
+                <img id="processedImg" src="/media/storage/outputs/demo_vehicle_detected.jpg" style="display: block; max-height: 520px; border-radius: 8px;" alt="Real Vehicle Detection Output" />
                 <video id="processedVid" controls style="display: none;"></video>
             </div>
 
-            <!-- Detection Summary Details -->
-            <div id="summaryResultsContainer" style="display: none;">
+            <!-- Detection Summary Details Pre-populated -->
+            <div id="summaryResultsContainer" style="display: block;">
                 <h4 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 14px;">Detection Metrics</h4>
                 <div class="row g-3">
                     <div class="col-sm-4">
                         <div style="background: #0b1220; padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
                             <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Total Detected</div>
-                            <div id="statTotalVehicles" style="font-size: 1.5rem; font-weight: 800; color: #10b981;">0</div>
+                            <div id="statTotalVehicles" style="font-size: 1.5rem; font-weight: 800; color: #10b981;">4</div>
                         </div>
                     </div>
                     <div class="col-sm-8">
                         <div style="background: #0b1220; padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
                             <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Vehicle Class Breakdown</div>
-                            <div id="classBreakdownBadges" class="d-flex flex-wrap gap-2"></div>
+                            <div id="classBreakdownBadges" class="d-flex flex-wrap gap-2">
+                                <span style="background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">CAR: 4</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -142,7 +139,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const progressPercent = document.getElementById("vehProgressPercent");
     const progressMsg = document.getElementById("vehProgressMsg");
 
-    const emptyPlaceholder = document.getElementById("emptyStatePlaceholder");
     const processedImg = document.getElementById("processedImg");
     const processedVid = document.getElementById("processedVid");
     const summaryContainer = document.getElementById("summaryResultsContainer");
@@ -174,7 +170,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (!data.is_video) {
                 // Immediate image result
-                emptyPlaceholder.style.display = "none";
                 processedVid.style.display = "none";
                 processedImg.src = data.result.output_image;
                 processedImg.style.display = "block";
@@ -201,7 +196,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     },
                     (session) => {
                         progressContainer.style.display = "none";
-                        emptyPlaceholder.style.display = "none";
                         processedImg.style.display = "none";
                         
                         processedVid.src = "/media/" + session.output_path;

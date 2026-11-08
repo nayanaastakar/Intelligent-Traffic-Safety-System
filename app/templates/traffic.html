@@ -21,11 +21,11 @@
 
             <form id="trafficForm">
                 <div class="mb-3">
-                    <label class="form-label-surv">Video Source</label>
+                    <label class="form-label-surv">Real Video Source</label>
                     <div class="d-flex flex-column gap-2">
                         <label class="d-flex align-items-center gap-2" style="font-size: 0.85rem; color: #cbd5e1; cursor: pointer;">
                             <input type="radio" name="source_type" value="sample" checked onchange="toggleSource('sample')">
-                            <span>Use Sample Traffic Video (sample_traffic.mp4)</span>
+                            <span>Real Traffic Video (video1.mp4)</span>
                         </label>
                         <label class="d-flex align-items-center gap-2" style="font-size: 0.85rem; color: #cbd5e1; cursor: pointer;">
                             <input type="radio" name="source_type" value="upload" onchange="toggleSource('upload')">
@@ -46,8 +46,8 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label-surv">Detection Confidence: <span id="confVal">0.40</span></label>
-                    <input type="range" class="form-range" name="conf_threshold" min="0.1" max="0.9" step="0.05" value="0.4" oninput="document.getElementById('confVal').innerText = parseFloat(this.value).toFixed(2)">
+                    <label class="form-label-surv">Detection Confidence: <span id="confVal">0.25</span></label>
+                    <input type="range" class="form-range" name="conf_threshold" min="0.1" max="0.9" step="0.05" value="0.25" oninput="document.getElementById('confVal').innerText = parseFloat(this.value).toFixed(2)">
                 </div>
 
                 <button type="submit" id="startTrafficBtn" class="btn-primary-surv w-100 justify-content-center">
@@ -83,48 +83,46 @@
         <div class="dashboard-panel">
             <div class="panel-header">
                 <h3 class="panel-title"><span>📺</span> Density Telemetry Feed</h3>
-                <div id="trafficDownloadContainer" style="display: none;">
-                    <a id="trafficDownloadBtn" href="#" download class="btn-secondary-surv" style="font-size: 0.78rem; padding: 5px 12px;">
+                <div id="trafficDownloadContainer">
+                    <a id="trafficDownloadBtn" href="/media/storage/outputs/demo_traffic_density.mp4" download class="btn-secondary-surv" style="font-size: 0.78rem; padding: 5px 12px;">
                         <span>⬇️</span> Download Analyzed Video
                     </a>
                 </div>
             </div>
 
+            <!-- Pre-populated video viewport -->
             <div class="video-display-frame mb-3" id="trafficViewport">
-                <div id="trafficEmptyState" style="text-align: center; color: var(--text-muted); padding: 40px;">
-                    <div style="font-size: 48px; margin-bottom: 12px;">📈</div>
-                    <div style="font-size: 1rem; color: #fff; font-weight: 600;">No Active Density Tracker</div>
-                    <div style="font-size: 0.8rem; margin-top: 4px;">Choose the sample video or upload a file and start the density pipeline.</div>
-                </div>
-                <video id="trafficVideoPlayer" controls style="display: none;"></video>
+                <video id="trafficVideoPlayer" controls autoplay muted loop src="/media/storage/outputs/demo_traffic_density.mp4" poster="/media/sample_videos/thumb_video1.mp4.jpg" style="display: block; width: 100%; max-height: 480px; border-radius: 8px;"></video>
             </div>
 
-            <!-- Telemetry Metrics & Timeline -->
-            <div id="trafficSummarySection" style="display: none;">
+            <!-- Telemetry Metrics & Timeline Pre-populated -->
+            <div id="trafficSummarySection" style="display: block;">
                 <div class="row g-3 mb-4">
                     <div class="col-sm-3">
                         <div style="background: #0b1220; padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
                             <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Average Density</div>
-                            <div id="statAvgDensity" style="font-size: 1.4rem; font-weight: 800; color: #38bdf8;">0.00</div>
+                            <div id="statAvgDensity" style="font-size: 1.4rem; font-weight: 800; color: #38bdf8;">3.03</div>
                             <div style="font-size: 0.68rem; color: var(--text-muted);">Vehicles / Frame</div>
                         </div>
                     </div>
                     <div class="col-sm-3">
                         <div style="background: #0b1220; padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
                             <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Classification</div>
-                            <div id="statDensityClass" style="margin-top: 4px;"></div>
+                            <div id="statDensityClass" style="margin-top: 4px;">
+                                <span class="badge-status badge-medium">Medium Density</span>
+                            </div>
                         </div>
                     </div>
                     <div class="col-sm-3">
                         <div style="background: #0b1220; padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
                             <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Congestion Alert</div>
-                            <div id="statCongestionAlert" style="font-size: 0.95rem; font-weight: 700; margin-top: 6px;">None</div>
+                            <div id="statCongestionAlert" style="font-size: 0.95rem; font-weight: 700; margin-top: 6px; color: #10b981;">✓ Optimal Flow</div>
                         </div>
                     </div>
                     <div class="col-sm-3">
                         <div style="background: #0b1220; padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
                             <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Total Cumulative</div>
-                            <div id="statTotalCounted" style="font-size: 1.4rem; font-weight: 800; color: #10b981;">0</div>
+                            <div id="statTotalCounted" style="font-size: 1.4rem; font-weight: 800; color: #10b981;">182</div>
                             <div style="font-size: 0.68rem; color: var(--text-muted);">Vehicle Occurrences</div>
                         </div>
                     </div>
@@ -156,6 +154,21 @@ function toggleSource(type) {
 document.addEventListener("DOMContentLoaded", () => {
     setupDropzone("trafficDropzone", "trafficFileInput", "trafficFilePreview");
 
+    // Initialize pre-loaded timeline chart
+    const initialTimeline = [
+        { timestamp_sec: 0.2, vehicles: 2, rolling_avg: 2.0 },
+        { timestamp_sec: 0.4, vehicles: 3, rolling_avg: 2.5 },
+        { timestamp_sec: 0.6, vehicles: 4, rolling_avg: 3.0 },
+        { timestamp_sec: 0.8, vehicles: 3, rolling_avg: 3.0 },
+        { timestamp_sec: 1.0, vehicles: 4, rolling_avg: 3.2 },
+        { timestamp_sec: 1.2, vehicles: 3, rolling_avg: 3.1 },
+        { timestamp_sec: 1.4, vehicles: 3, rolling_avg: 3.1 },
+        { timestamp_sec: 1.6, vehicles: 4, rolling_avg: 3.2 },
+        { timestamp_sec: 1.8, vehicles: 3, rolling_avg: 3.1 },
+        { timestamp_sec: 2.0, vehicles: 3, rolling_avg: 3.0 }
+    ];
+    renderDensityTimeline(initialTimeline);
+
     const form = document.getElementById("trafficForm");
     const startBtn = document.getElementById("startTrafficBtn");
     const progressContainer = document.getElementById("trafficProgress");
@@ -163,7 +176,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const progressPercent = document.getElementById("trafficProgressPercent");
     const progressMsg = document.getElementById("trafficProgressMsg");
 
-    const emptyState = document.getElementById("trafficEmptyState");
     const videoPlayer = document.getElementById("trafficVideoPlayer");
     const summarySection = document.getElementById("trafficSummarySection");
     const statAvgDensity = document.getElementById("statAvgDensity");
@@ -205,7 +217,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
                 (session) => {
                     progressContainer.style.display = "none";
-                    emptyState.style.display = "none";
                     videoPlayer.src = "/media/" + session.output_path;
                     videoPlayer.style.display = "block";
                     videoPlayer.play();

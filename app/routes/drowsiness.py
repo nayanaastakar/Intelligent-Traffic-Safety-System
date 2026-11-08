@@ -63,8 +63,10 @@ def process_video():
     original_name = None
 
     if source_type == "sample":
-        input_path = os.path.join(Config.SAMPLE_DATA_FOLDER, "sample_traffic.mp4")
-        original_name = "sample_traffic.mp4"
+        input_path = os.path.join(Config.BASE_DIR, "sample_videos", "video5.mp4")
+        if not os.path.exists(input_path):
+            input_path = os.path.join(Config.SAMPLE_DATA_FOLDER, "sample_traffic.mp4")
+        original_name = "video5.mp4"
     else:
         file = request.files.get("file")
         if not file or file.filename == "":

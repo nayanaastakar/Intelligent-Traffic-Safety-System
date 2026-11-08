@@ -16,15 +16,17 @@ def index():
 @bp.route("/detect", methods=["POST"])
 def detect():
     source_type = request.form.get("source_type", "sample")
-    proximity = float(request.form.get("proximity_threshold", 0.5))
-    conf_thresh = float(request.form.get("conf_threshold", 0.4))
+    proximity = float(request.form.get("proximity_threshold", 0.6))
+    conf_thresh = float(request.form.get("conf_threshold", 0.25))
 
     input_path = None
     original_name = None
 
     if source_type == "sample":
-        input_path = os.path.join(Config.SAMPLE_DATA_FOLDER, "sample_traffic.mp4")
-        original_name = "sample_traffic.mp4"
+        input_path = os.path.join(Config.BASE_DIR, "sample_videos", "video6.mp4")
+        if not os.path.exists(input_path):
+            input_path = os.path.join(Config.SAMPLE_DATA_FOLDER, "sample_traffic.mp4")
+        original_name = "video6.mp4"
     else:
         file = request.files.get("file")
         if not file or file.filename == "":

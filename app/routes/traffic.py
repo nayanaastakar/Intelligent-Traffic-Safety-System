@@ -16,14 +16,17 @@ def index():
 @bp.route("/analyze", methods=["POST"])
 def analyze():
     source_type = request.form.get("source_type", "sample")
-    conf_thresh = float(request.form.get("conf_threshold", 0.4))
+    conf_thresh = float(request.form.get("conf_threshold", 0.25))
     
     input_path = None
     original_name = None
 
     if source_type == "sample":
-        input_path = os.path.join(Config.SAMPLE_DATA_FOLDER, "sample_traffic.mp4")
-        original_name = "sample_traffic.mp4"
+        sample_choice = request.form.get("sample_file", "video1.mp4")
+        input_path = os.path.join(Config.BASE_DIR, "sample_videos", "video1.mp4")
+        if not os.path.exists(input_path):
+            input_path = os.path.join(Config.SAMPLE_DATA_FOLDER, "sample_traffic.mp4")
+        original_name = "video1.mp4"
     else:
         file = request.files.get("file")
         if not file or file.filename == "":
