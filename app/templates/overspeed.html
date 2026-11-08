@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}Overspeed Detection | Intelligent Traffic Safety System{% endblock %}
+{% block breadcrumb %}Overspeed Detection & Radar Telemetry{% endblock %}
+
+{% block content %}
+<div class="page-header-block">
+    <div>
+        <h1 class="page-title">Overspeed Detection & Radar Telemetry</h1>
+        <div class="page-tagline">Optical centroid movement estimation, speed limit compliance HUD, and violation recording.</div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Controls Column -->
+    <div class="col-lg-4">
+        <div class="dashboard-panel">
+            <div class="panel-header">
+                <h3 class="panel-title"><span>⚡</span> Telemetry Configuration</h3>
+            </div>
+
+            <form id="overspeedForm">
+                <div class="mb-3">
+                    <label class="form-label-surv">Operating Mode</label>
+                    <div class="d-flex gap-3">
+                        <label class="d-flex align-items-center gap-2" style="font-size: 0.85rem; color: #cbd5e1; cursor: pointer;">
+                            <input type="radio" name="mode" value="image" checked onchange="toggleMode('image')">
+                            <span>Image Overlay HUD</span>
+                        </label>
+                        <label class="d-flex align-items-center gap-2" style="font-size: 0.85rem; color: #cbd5e1; cursor: pointer;">
+                            <input type="radio" name="mode" value="video" onchange="toggleMode('video')">
+                            <span>Video Tracking Velocity</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label-surv">Media Input Source</label>
+                    <div class="d-flex flex-column gap-2">
+                        <label class="d-flex align-items-center gap-2" style="font-size: 0.85rem; color: #cbd5e1; cursor: pointer;">
+                            <input type="radio" name="source_type" value="sample" checked onchange="toggleSource('sample')">
+                            <span id="sampleRadioLabel">Use Sample Car Image (sample_car.png)</span>
+                        </label>
+                        <label class="d-flex align-items-center gap-2" style="font-size: 0.85rem; color: #cbd5e1; cursor: pointer;">
+                            <input type="radio" name="source_type" value="upload" onchange="toggleSource('upload')">
+                            <span>Upload Custom File</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="overspeedUploadGroup" class="mb-3" style="display: none;">
+                    <label class="form-label-surv">Upload File</label>
+                    <div class="upload-dropzone" id="speedDropzone">
+                        <div class="upload-icon">⚡</div>
+                        <div style="font-size: 0.88rem; color: #fff; font-weight: 600;">Drag & Drop Media</div>
+                        <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">PNG, JPG for Image mode; MP4, AVI for Video mode</div>
+                        <input type="file" id="speedFileInput" name="file" style="display: none;">
+                    </div>
+                    <div id="speedFilePreview"></div>
+                </div>
+
+                <!-- Image Mode simulated speed slider -->
+                <div id="imageSpeedControls" class="mb-3">
+                    <label class="form-label-surv">Simulated Vehicle Speed: <span id="simSpeedVal">85</span> km/h</label>
+                    <input type="range" class="form-range" name="simulated_speed" min="20" max="180" step="5" value="85" oninput="document.getElementById('simSpeedVal').innerText = this.value">
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label-surv">Roadway Speed Limit: <span id="limitVal">70</span> km/h</label>
+                    <input type="range" class="form-range" name="speed_limit" min="30" max="140" step="5" value="70" oninput="document.getElementById('limitVal').innerText = this.value">
+                </div>
+
+                <button type="submit" id="startSpeedBtn" class="btn-primary-surv w-100 justify-content-center">
+                    <span>⚡</span> <span>Execute Speed Telemetry</span>
+                </button>
+            </form>
+
+            <div id="speedProgress" style="display: none; margin-top: 20px;">
+                <div class="d-flex justify-content-between" style="font-size: 0.78rem; color: #94a3b8;">
+                    <span id="speedProgressMsg">Tracking vehicle velocities...</span>
+                    <span id="speedProgressPercent">0%</span>
+                </div>
+                <div class="progress-surv-bar">
+                    <div id="speedProgressBar" class="progress-surv-fill"></div>
+                </div>
+            </div>
+
+            <!-- Technical Notice as requested in Phase 7 -->
+            <div style="margin-top: 24px; padding: 14px; background: #0b1220; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                <div style="font-size: 0.78rem; font-weight: 700; color: #fff; margin-bottom: 6px;">Technical Calibration Notice</div>
+                <div style="font-size: 0.72rem; color: var(--text-secondary); line-height: 1.5;">
+                    Single-camera optical speed is calculated via frame-to-frame 2D Euclidean centroid displacement tracking. Without surveyed ground distance calibration markers, speeds represent tracking approximations.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Viewport & HUD Column -->
+    <div class="col-lg-8">
+        <div class="dashboard-panel">
+            <div class="panel-header">
+                <h3 class="panel-title"><span>📺</span> Radar Telemetry HUD Output</h3>
+                <div id="speedDownloadContainer" style="display: none;">
+                    <a id="speedDownloadBtn" href="#" download class="btn-secondary-surv" style="font-size: 0.78rem; padding: 5px 12px;">
+                        <span>⬇️</span> Download Result
+                    </a>
+                </div>
+            </div>
+
+            <div class="video-display-frame mb-3" id="speedViewport">
+                <div id="speedEmptyState" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">⚡</div>
+                    <div style="font-size: 1rem; color: #fff; font-weight: 600;">No Speed Analysis Active</div>
+                    <div style="font-size: 0.8rem; margin-top: 4px;">Adjust limits and click Execute Speed Telemetry to generate the overlay HUD.</div>
+                </div>
+                <img id="speedProcessedImg" style="display: none;" alt="Speed HUD" />
+                <video id="speedVideoPlayer" controls style="display: none;"></video>
+            </div>
+
+            <!-- Summary Details -->
+            <div id="speedSummarySection" style="display: none;">
+                <div class="row g-3">
+                    <div class="col-sm-4">
+                        <div style="background: #0b1220; padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                            <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Compliance Status</div>
+                            <div id="statSpeedStatus" style="font-size: 1rem; font-weight: 800; margin-top: 4px;">--</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div style="background: #0b1220; padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                            <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Speed Monitored / Limit</div>
+                            <div id="statSpeedValues" style="font-size: 1.1rem; font-weight: 700; color: #fff; margin-top: 4px;">--</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div style="background: #0b1220; padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                            <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Excess Velocity</div>
+                            <div id="statExcessSpeed" style="font-size: 1.1rem; font-weight: 700; color: #ef4444; margin-top: 4px;">0 km/h</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleMode(mode) {
+    const isImage = mode === "image";
+    document.getElementById("imageSpeedControls").style.display = isImage ? "block" : "none";
+    document.getElementById("sampleRadioLabel").innerText = isImage ? "Use Sample Car Image (sample_car.png)" : "Use Sample Traffic Video (sample_traffic.mp4)";
+}
+
+function toggleSource(type) {
+    document.getElementById("overspeedUploadGroup").style.display = type === "upload" ? "block" : "none";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    setupDropzone("speedDropzone", "speedFileInput", "speedFilePreview");
+
+    const form = document.getElementById("overspeedForm");
+    const startBtn = document.getElementById("startSpeedBtn");
+    const progressContainer = document.getElementById("speedProgress");
+    const progressBar = document.getElementById("speedProgressBar");
+    const progressPercent = document.getElementById("speedProgressPercent");
+    const progressMsg = document.getElementById("speedProgressMsg");
+
+    const emptyState = document.getElementById("speedEmptyState");
+    const processedImg = document.getElementById("speedProcessedImg");
+    const videoPlayer = document.getElementById("speedVideoPlayer");
+    const summarySection = document.getElementById("speedSummarySection");
+    const statStatus = document.getElementById("statSpeedStatus");
+    const statValues = document.getElementById("statSpeedValues");
+    const statExcess = document.getElementById("statExcessSpeed");
+    const downloadContainer = document.getElementById("speedDownloadContainer");
+    const downloadBtn = document.getElementById("speedDownloadBtn");
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        startBtn.disabled = true;
+        startBtn.innerHTML = "<span>⏳</span> <span>Executing...</span>";
+
+        const formData = new FormData(form);
+
+        try {
+            const resp = await fetch("{{ url_for('overspeed.detect') }}", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await resp.json();
+            if (!data.success) {
+                showToast(data.error || "Execution failed", "error");
+                startBtn.disabled = false;
+                startBtn.innerHTML = "<span>⚡</span> <span>Execute Speed Telemetry</span>";
+                return;
+            }
+
+            if (!data.is_video) {
+                // Immediate Image Result
+                emptyState.style.display = "none";
+                videoPlayer.style.display = "none";
+                processedImg.src = data.result.output_image;
+                processedImg.style.display = "block";
+
+                const isOver = data.result.is_overspeed;
+                statStatus.innerHTML = isOver ? 
+                    `<span class="badge-status badge-high">Overspeed Alert</span>` : 
+                    `<span class="badge-status badge-low">Speed OK</span>`;
+                
+                statValues.innerText = `${data.result.speed_kmh} km/h (Limit: ${data.result.speed_limit_kmh})`;
+                statExcess.innerText = `${data.result.excess_kmh} km/h`;
+
+                if (isOver) {
+                    showToast(`Overspeed Alert: ${data.result.speed_kmh} km/h exceeds limit!`, "warning");
+                } else {
+                    showToast("Speed compliant with section limit.", "success");
+                }
+
+                summarySection.style.display = "block";
+                downloadBtn.href = data.result.output_image;
+                downloadContainer.style.display = "block";
+
+                startBtn.disabled = false;
+                startBtn.innerHTML = "<span>⚡</span> <span>Execute Speed Telemetry</span>";
+            } else {
+                // Background Video Tracking Job
+                progressContainer.style.display = "block";
+                pollJobStatus(
+                    data.job_id,
+                    (percent, msg) => {
+                        progressBar.style.width = percent + "%";
+                        progressPercent.innerText = percent + "%";
+                        progressMsg.innerText = msg;
+                    },
+                    (session) => {
+                        progressContainer.style.display = "none";
+                        emptyState.style.display = "none";
+                        processedImg.style.display = "none";
+                        videoPlayer.src = "/media/" + session.output_path;
+                        videoPlayer.style.display = "block";
+                        videoPlayer.play();
+
+                        const summary = session.summary || {};
+                        const violations = summary.overspeed_violations || 0;
+                        statStatus.innerHTML = violations > 0 ? 
+                            `<span class="badge-status badge-high">${violations} Violations</span>` : 
+                            `<span class="badge-status badge-low">Zero Violations</span>`;
+                        
+                        statValues.innerText = `Max: ${summary.max_detected_speed_kmh || 0} km/h (Limit: ${summary.speed_limit_kmh})`;
+                        statExcess.innerText = violations > 0 ? `Flagged: ${violations}` : "None";
+
+                        summarySection.style.display = "block";
+                        downloadBtn.href = "/media/" + session.output_path;
+                        downloadContainer.style.display = "block";
+
+                        showToast("Video speed tracking analysis complete!", "success");
+                        startBtn.disabled = false;
+                        startBtn.innerHTML = "<span>⚡</span> <span>Execute Speed Telemetry</span>";
+                    },
+                    (err) => {
+                        progressContainer.style.display = "none";
+                        showToast("Video tracking failed: " + err, "error");
+                        startBtn.disabled = false;
+                        startBtn.innerHTML = "<span>⚡</span> <span>Execute Speed Telemetry</span>";
+                    }
+                );
+            }
+
+        } catch (err) {
+            showToast("Network error: " + err.message, "error");
+            startBtn.disabled = false;
+            startBtn.innerHTML = "<span>⚡</span> <span>Execute Speed Telemetry</span>";
+        }
+    });
+});
+</script>
+{% endblock %}

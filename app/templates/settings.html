@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}System Settings | Intelligent Traffic Safety System{% endblock %}
+{% block breadcrumb %}System Configuration & Thresholds{% endblock %}
+
+{% block content %}
+<div class="page-header-block">
+    <div>
+        <h1 class="page-title">System Settings & Algorithm Thresholds</h1>
+        <div class="page-tagline">Manage computer vision neural parameters, acoustic alert policies, and hardware bindings.</div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="dashboard-panel">
+            <div class="panel-header">
+                <h3 class="panel-title"><span>⚙️</span> Detection Engine Parameters</h3>
+            </div>
+
+            <form method="POST">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label-surv">YOLO Confidence Threshold (0.1 &ndash; 0.9)</label>
+                        <input type="number" step="0.05" min="0.1" max="0.9" name="yolo_conf_threshold" class="form-control-surv" value="{{ settings.yolo_conf_threshold }}">
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Filters false-positive object proposals.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-surv">NMS Suppression IoU Threshold (0.1 &ndash; 0.9)</label>
+                        <input type="number" step="0.05" min="0.1" max="0.9" name="yolo_nms_threshold" class="form-control-surv" value="{{ settings.yolo_nms_threshold }}">
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Eliminates redundant overlapping bounding boxes.</div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label-surv">Accident Proximity Overlap Factor (0.2 &ndash; 1.0)</label>
+                        <input type="number" step="0.05" min="0.2" max="1.0" name="proximity_threshold" class="form-control-surv" value="{{ settings.proximity_threshold }}">
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Bounding box intersection ratio for collision warnings.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-surv">Highway Speed Limit (km/h)</label>
+                        <input type="number" min="30" max="150" step="5" name="speed_limit_kmh" class="form-control-surv" value="{{ settings.speed_limit_kmh }}">
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Section speed limit for overspeed violation alerts.</div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label-surv">Optical Speed Calibration Factor</label>
+                        <input type="number" step="0.05" min="0.5" max="3.0" name="speed_calibration_factor" class="form-control-surv" value="{{ settings.speed_calibration_factor }}">
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Centroid displacement to km/h scaling coefficient.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-surv">MediaPipe EAR Drowsiness Threshold (0.15 &ndash; 0.35)</label>
+                        <input type="number" step="0.01" min="0.15" max="0.35" name="ear_threshold" class="form-control-surv" value="{{ settings.ear_threshold }}">
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Eye aspect ratio denoting closed eyelids.</div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label-surv">Consecutive Drowsy Frames Limit</label>
+                        <input type="number" min="5" max="60" step="1" name="consecutive_drowsy_frames" class="form-control-surv" value="{{ settings.consecutive_drowsy_frames }}">
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Persistence frames required before sleepiness alarm.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-surv">System Camera Device Index</label>
+                        <input type="number" min="0" max="5" name="camera_index" class="form-control-surv" value="{{ settings.camera_index }}">
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Index 0 is default system webcam.</div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label-surv">Max Upload File Size (MB)</label>
+                        <input type="number" min="10" max="1000" name="max_upload_size_mb" class="form-control-surv" value="{{ settings.max_upload_size_mb }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-surv">Console Theme Mode</label>
+                        <select name="theme_mode" class="form-control-surv">
+                            <option value="dark" selected>Surveillance Dark Navy (Default)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="d-flex align-items-center gap-2" style="cursor: pointer; color: #fff;">
+                        <input type="checkbox" name="audio_alerts_enabled" {% if settings.audio_alerts_enabled %}checked{% endif %} style="width: 18px; height: 18px;">
+                        <span>Enable System Acoustic Alerts (Beep sound on violations & critical incidents)</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-primary-surv">
+                    <span>💾</span> <span>Save Configuration</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Storage & System Info Panel -->
+    <div class="col-lg-4">
+        <div class="dashboard-panel">
+            <div class="panel-header">
+                <h3 class="panel-title"><span>💾</span> System Storage & Health</h3>
+            </div>
+            <div style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.8;">
+                <div><strong>Database:</strong> SQLite (<code>traffic_safety.db</code>)</div>
+                <div><strong>Inference Backend:</strong> OpenCV DNN (OpenCV 4.13)</div>
+                <div><strong>YOLO Weights:</strong> YOLOv3-Tiny (35.4 MB active)</div>
+                <div><strong>Face Landmark Engine:</strong> MediaPipe FaceMesh</div>
+                <div><strong>Upload Directory:</strong> <code>storage/uploads/</code></div>
+                <div><strong>Evidence Directory:</strong> <code>storage/evidence/</code></div>
+                <div><strong>Output Directory:</strong> <code>storage/outputs/</code></div>
+            </div>
+            <div class="mt-4 pt-3 border-top" style="border-color: var(--border-subtle) !important;">
+                <span class="badge-status badge-completed">
+                    <span class="pulse-dot"></span> All Subsystems Verified
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

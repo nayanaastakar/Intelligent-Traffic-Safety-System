@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Detection History | Intelligent Traffic Safety System{% endblock %}
+{% block breadcrumb %}Historical Audit Log{% endblock %}
+
+{% block content %}
+<div class="page-header-block">
+    <div>
+        <h1 class="page-title">Detection History & Evidence Logs</h1>
+        <div class="page-tagline">Permanent audit trail of all computer vision processing sessions, telemetry, and evidence files.</div>
+    </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="dashboard-panel p-3 mb-4">
+    <form method="GET" class="row g-2 align-items-center">
+        <div class="col-md-3">
+            <select name="module" class="form-control-surv" onchange="this.form.submit()">
+                <option value="all" {% if current_filters.module == 'all' %}selected{% endif %}>All Modules</option>
+                <option value="vehicle" {% if current_filters.module == 'vehicle' %}selected{% endif %}>Vehicle Detection</option>
+                <option value="traffic" {% if current_filters.module == 'traffic' %}selected{% endif %}>Traffic Density</option>
+                <option value="accident" {% if current_filters.module == 'accident' %}selected{% endif %}>Accident Detection</option>
+                <option value="overspeed" {% if current_filters.module == 'overspeed' %}selected{% endif %}>Overspeed Detection</option>
+                <option value="drowsiness" {% if current_filters.module == 'drowsiness' %}selected{% endif %}>Driver Drowsiness</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="status" class="form-control-surv" onchange="this.form.submit()">
+                <option value="all" {% if current_filters.status == 'all' %}selected{% endif %}>All Statuses</option>
+                <option value="COMPLETED" {% if current_filters.status == 'COMPLETED' %}selected{% endif %}>Completed</option>
+                <option value="PROCESSING" {% if current_filters.status == 'PROCESSING' %}selected{% endif %}>Processing</option>
+                <option value="FAILED" {% if current_filters.status == 'FAILED' %}selected{% endif %}>Failed</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <input type="text" name="search" class="form-control-surv" placeholder="Search by filename..." value="{{ current_filters.search }}">
+        </div>
+        <div class="col-md-2 text-end">
+            <button type="submit" class="btn-primary-surv" style="font-size: 0.8rem; padding: 7px 14px;">Filter</button>
+            <a href="{{ url_for('history.index') }}" class="btn-secondary-surv" style="font-size: 0.8rem; padding: 7px 12px;">Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- Sessions Table Panel -->
+<div class="dashboard-panel">
+    <div class="table-responsive">
+        <table class="table-surv">
+            <thead>
+                <tr>
+                    <th>Session ID</th>
+                    <th>Module</th>
+                    <th>Input File</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th>Detections / Findings</th>
+                    <th>Evidence / Output</th>
+                    <th>Timestamp</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in sessions %}
+                <tr id="session-row-{{ s.id }}">
+                    <td style="font-size: 0.75rem; font-family: monospace; color: #94a3b8;">
+                        {{ s.id[:8] }}...
+                    </td>
+                    <td>
+                        <strong style="color: #38bdf8;">{{ s.module|capitalize }}</strong>
+                        <div style="font-size: 0.68rem; color: var(--text-muted);">{{ s.media_type }}</div>
+                    </td>
+                    <td style="max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        {{ s.input_filename or 'Stream / Webcam' }}
+                    </td>
+                    <td style="font-size: 0.8rem;">
+                        {{ s.duration_sec|round(2) }}s
+                    </td>
+                    <td>
+                        <span class="badge-status badge-{{ s.status|lower }}">{{ s.status }}</span>
+                    </td>
+                    <td style="font-size: 0.82rem;">
+                        {% if s.module == 'vehicle' %}
+                            {{ s.total_vehicles }} Vehicles
+                        {% elif s.module == 'traffic' %}
+                            {{ s.total_vehicles }} Cumulative ({{ s.density_level or 'Normal' }})
+                        {% elif s.module == 'accident' %}
+                            {{ s.accidents_count }} Crashes Flagged
+                        {% elif s.module == 'overspeed' %}
+                            {{ s.overspeed_count }} Violations
+                        {% elif s.module == 'drowsiness' %}
+                            {{ s.drowsiness_count }} Eye Closures
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            {% if s.evidence_path %}
+                            <button type="button" onclick="openEvidenceModal('/media/{{ s.evidence_path }}', 'Session {{ s.id[:8] }} Evidence')" class="btn-secondary-surv" style="padding: 3px 8px; font-size: 0.72rem;">
+                                Evidence
+                            </button>
+                            {% endif %}
+                            {% if s.output_path %}
+                            <a href="/media/{{ s.output_path }}" download class="btn-secondary-surv" style="padding: 3px 8px; font-size: 0.72rem;">
+                                Download
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td style="font-size: 0.75rem; color: var(--text-muted); white-space: nowrap;">
+                        {{ s.created_at.strftime('%Y-%m-%d %H:%M') if s.created_at else '' }}
+                    </td>
+                    <td>
+                        <button type="button" onclick="deleteSession('{{ s.id }}')" class="btn-secondary-surv" style="padding: 3px 8px; font-size: 0.72rem; color: #f87171;" title="Delete Record">
+                            ✕
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="text-center text-muted py-5">
+                        <div style="font-size: 32px; margin-bottom: 8px;">🕒</div>
+                        <div>No detection sessions recorded matching your query.</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function deleteSession(sessionId) {
+    if (!confirm("Are you sure you want to delete this session record from history?")) {
+        return;
+    }
+
+    try {
+        const resp = await fetch(`/history/${sessionId}/delete`, {
+            method: "POST"
+        });
+        const data = await resp.json();
+        if (data.success) {
+            showToast("Session record removed.", "info");
+            const row = document.getElementById(`session-row-${sessionId}`);
+            if (row) row.remove();
+        } else {
+            showToast("Failed to delete: " + data.error, "error");
+        }
+    } catch (e) {
+        showToast("Error deleting session: " + e.message, "error");
+    }
+}
+</script>
+{% endblock %}

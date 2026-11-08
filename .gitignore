@@ -14,6 +14,20 @@ dist/
 !yolov3-tiny.weights
 logs/
 uploads/
-*.mp4
 !sample_videos/
 !sample_videos/*.mp4
+!data/
+!data/*
+
+# Storage and runtime files
+storage/uploads/*
+!storage/uploads/.gitkeep
+storage/outputs/*
+!storage/outputs/.gitkeep
+storage/evidence/*
+!storage/evidence/.gitkeep
+storage/*.db
+storage/*.db-journal
+
+# Automation scripts
+capture_itss_screenshots.js

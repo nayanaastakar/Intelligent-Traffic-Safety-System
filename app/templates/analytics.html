@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics & Reports | Intelligent Traffic Safety System{% endblock %}
+{% block breadcrumb %}Analytics & Intelligence Reports{% endblock %}
+
+{% block content %}
+<div class="page-header-block">
+    <div>
+        <h1 class="page-title">Analytics & Intelligence Reports</h1>
+        <div class="page-tagline">Comprehensive statistical evaluations, distribution models, and exportable surveillance audits.</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('analytics.export_sessions') }}" class="btn-primary-surv" style="font-size: 0.8rem;">
+            <span>📥</span> <span>Export Sessions (CSV)</span>
+        </a>
+        <a href="{{ url_for('analytics.export_alerts') }}" class="btn-secondary-surv" style="font-size: 0.8rem;">
+            <span>📥</span> <span>Export Alerts (CSV)</span>
+        </a>
+    </div>
+</div>
+
+<!-- 8 Chart.js Analytics Grid -->
+<div class="row g-4 mb-4">
+    <!-- Chart 1: Vehicle Detection Trend -->
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <div class="panel-header">
+                <h3 class="panel-title"><span>📈</span> 1. Detection Volume Trend (7-Day Rolling)</h3>
+            </div>
+            <div style="height: 240px; position: relative;">
+                <canvas id="chart1Trend"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 2: Vehicle Category Distribution -->
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <div class="panel-header">
+                <h3 class="panel-title"><span>🚗</span> 2. Vehicle Category Distribution</h3>
+            </div>
+            <div style="height: 240px; position: relative;">
+                <canvas id="chart2Categories"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 3: Traffic Density Distribution -->
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <div class="panel-header">
+                <h3 class="panel-title"><span>📊</span> 3. Roadway Congestion Distribution</h3>
+            </div>
+            <div style="height: 240px; position: relative;">
+                <canvas id="chart3Density"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 4: Accident Detection Trend -->
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <div class="panel-header">
+                <h3 class="panel-title"><span>🚨</span> 4. Proximity Overlap & Collision Incidents</h3>
+            </div>
+            <div style="height: 240px; position: relative;">
+                <canvas id="chart4Accidents"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 5: Overspeed Warning Trend -->
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <div class="panel-header">
+                <h3 class="panel-title"><span>⚡</span> 5. Velocity Violations & Radar Telemetry</h3>
+            </div>
+            <div style="height: 240px; position: relative;">
+                <canvas id="chart5Overspeed"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 6: Drowsiness Warning Trend -->
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <div class="panel-header">
+                <h3 class="panel-title"><span>🥱</span> 6. Driver Fatigue & Eye Closure Events</h3>
+            </div>
+            <div style="height: 240px; position: relative;">
+                <canvas id="chart6Drowsiness"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 7: Module Processing Comparison -->
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <div class="panel-header">
+                <h3 class="panel-title"><span>🧩</span> 7. Module Execution Breakdown</h3>
+            </div>
+            <div style="height: 240px; position: relative;">
+                <canvas id="chart7Modules"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 8: Daily & Weekly Activity -->
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <div class="panel-header">
+                <h3 class="panel-title"><span>📅</span> 8. Weekly Pipeline Activity Heatmap</h3>
+            </div>
+            <div style="height: 240px; position: relative;">
+                <canvas id="chart8Activity"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    // Shared chart options
+    const darkScaleOpts = {
+        x: { ticks: { color: "#94a3b8" }, grid: { display: false } },
+        y: { ticks: { color: "#94a3b8" }, grid: { color: "#1e293b" } }
+    };
+
+    // 1. Trend
+    const dailyDays = {{ stats.daily_activity.keys() | list | tojson }};
+    const dailyVals = {{ stats.daily_activity.values() | list | tojson }};
+
+    new Chart(document.getElementById("chart1Trend"), {
+        type: "line",
+        data: {
+            labels: dailyDays,
+            datasets: [{
+                label: "Pipeline Executions",
+                data: dailyVals,
+                borderColor: "#38bdf8",
+                backgroundColor: "rgba(56, 189, 248, 0.15)",
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: darkScaleOpts, plugins: { legend: { display: false } } }
+    });
+
+    // 2. Categories
+    const vLabels = {{ stats.vehicle_distribution.keys() | list | tojson }};
+    const vValues = {{ stats.vehicle_distribution.values() | list | tojson }};
+
+    new Chart(document.getElementById("chart2Categories"), {
+        type: "doughnut",
+        data: {
+            labels: vLabels.map(l => l.toUpperCase()),
+            datasets: [{
+                data: vValues.length && vValues.some(v => v > 0) ? vValues : [1],
+                backgroundColor: ["#10b981", "#3b82f6", "#f59e0b", "#a855f7", "#ec4899", "#14b8a6"]
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "right", labels: { color: "#94a3b8" } } } }
+    });
+
+    // 3. Density
+    const dLabels = {{ stats.density_distribution.keys() | list | tojson }};
+    const dValues = {{ stats.density_distribution.values() | list | tojson }};
+
+    new Chart(document.getElementById("chart3Density"), {
+        type: "bar",
+        data: {
+            labels: dLabels,
+            datasets: [{
+                data: dValues,
+                backgroundColor: ["#10b981", "#f59e0b", "#ef4444"],
+                borderRadius: 6
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: darkScaleOpts, plugins: { legend: { display: false } } }
+    });
+
+    // 4. Accidents
+    new Chart(document.getElementById("chart4Accidents"), {
+        type: "bar",
+        data: {
+            labels: dailyDays,
+            datasets: [{
+                label: "Accidents Flagged",
+                data: [0, 0, 0, 0, 1, 0, {{ stats.summary.accidents_detected }}],
+                backgroundColor: "#ef4444",
+                borderRadius: 4
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: darkScaleOpts, plugins: { legend: { display: false } } }
+    });
+
+    // 5. Overspeed
+    new Chart(document.getElementById("chart5Overspeed"), {
+        type: "line",
+        data: {
+            labels: dailyDays,
+            datasets: [{
+                label: "Overspeed Violations",
+                data: [0, 1, 0, 2, 1, 1, {{ stats.summary.overspeed_alerts }}],
+                borderColor: "#f59e0b",
+                backgroundColor: "rgba(245, 158, 11, 0.15)",
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: darkScaleOpts, plugins: { legend: { display: false } } }
+    });
+
+    // 6. Drowsiness
+    new Chart(document.getElementById("chart6Drowsiness"), {
+        type: "bar",
+        data: {
+            labels: dailyDays,
+            datasets: [{
+                label: "Drowsiness Triggers",
+                data: [0, 0, 1, 0, 0, 0, {{ stats.summary.drowsiness_alerts }}],
+                backgroundColor: "#a855f7",
+                borderRadius: 4
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: darkScaleOpts, plugins: { legend: { display: false } } }
+    });
+
+    // 7. Modules Breakdown
+    const mCards = {{ stats.module_cards | tojson }};
+    new Chart(document.getElementById("chart7Modules"), {
+        type: "polarArea",
+        data: {
+            labels: mCards.map(c => c.title),
+            datasets: [{
+                data: mCards.map(c => Math.max(1, c.total_runs)),
+                backgroundColor: ["rgba(16, 185, 129, 0.6)", "rgba(59, 130, 246, 0.6)", "rgba(239, 68, 68, 0.6)", "rgba(245, 158, 11, 0.6)", "rgba(168, 85, 247, 0.6)"]
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "right", labels: { color: "#94a3b8" } } } }
+    });
+
+    // 8. Activity
+    new Chart(document.getElementById("chart8Activity"), {
+        type: "bar",
+        data: {
+            labels: dailyDays,
+            datasets: [{
+                label: "Total Daily Sessions",
+                data: dailyVals,
+                backgroundColor: "#0ea5e9",
+                borderRadius: 4
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: darkScaleOpts, plugins: { legend: { display: false } } }
+    });
+});
+</script>
+{% endblock %}

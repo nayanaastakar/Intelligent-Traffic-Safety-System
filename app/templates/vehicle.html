@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}Vehicle Detection | Intelligent Traffic Safety System{% endblock %}
+{% block breadcrumb %}Vehicle Detection & Classification{% endblock %}
+
+{% block content %}
+<div class="page-header-block">
+    <div>
+        <h1 class="page-title">Vehicle Detection & Classification</h1>
+        <div class="page-tagline">High-precision object localization and classification using YOLO neural networks.</div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Configuration & Input Controls -->
+    <div class="col-lg-4">
+        <div class="dashboard-panel">
+            <div class="panel-header">
+                <h3 class="panel-title"><span>⚙️</span> Detection Settings</h3>
+            </div>
+
+            <form id="vehicleDetectForm">
+                <div class="mb-3">
+                    <label class="form-label-surv">Media Input Source</label>
+                    <div class="d-flex flex-column gap-2">
+                        <label class="d-flex align-items-center gap-2" style="font-size: 0.85rem; color: #cbd5e1; cursor: pointer;">
+                            <input type="radio" name="source_type" value="sample" checked onchange="toggleSourceType('sample')">
+                            <span>Use Sample Media</span>
+                        </label>
+                        <label class="d-flex align-items-center gap-2" style="font-size: 0.85rem; color: #cbd5e1; cursor: pointer;">
+                            <input type="radio" name="source_type" value="upload" onchange="toggleSourceType('upload')">
+                            <span>Upload Custom File (Image or Video)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Sample Selection -->
+                <div id="sampleSelectGroup" class="mb-3">
+                    <label class="form-label-surv">Choose Sample</label>
+                    <select name="sample_file" class="form-control-surv">
+                        <option value="sample_highway.png">Highway Scene (Image - sample_highway.png)</option>
+                        <option value="sample_car.png">Sports Car (Image - sample_car.png)</option>
+                        <option value="sample_traffic.mp4">Traffic Flow (Video - sample_traffic.mp4)</option>
+                    </select>
+                </div>
+
+                <!-- Upload Group -->
+                <div id="uploadGroup" class="mb-3" style="display: none;">
+                    <label class="form-label-surv">Upload Image / Video</label>
+                    <div class="upload-dropzone" id="vehDropzone">
+                        <div class="upload-icon">📁</div>
+                        <div style="font-size: 0.88rem; color: #fff; font-weight: 600;">Click or Drag & Drop File</div>
+                        <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Supports PNG, JPG, MP4, MOV, AVI (Max 200MB)</div>
+                        <input type="file" id="vehFileInput" name="file" accept="image/*,video/*" style="display: none;">
+                    </div>
+                    <div id="vehFilePreview"></div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label-surv">Confidence Threshold: <span id="confVal">0.40</span></label>
+                    <input type="range" class="form-range" name="conf_threshold" min="0.1" max="0.9" step="0.05" value="0.4" oninput="document.getElementById('confVal').innerText = parseFloat(this.value).toFixed(2)">
+                </div>
+
+                <button type="submit" id="startDetectBtn" class="btn-primary-surv w-100 justify-content-center">
+                    <span>🔍</span> <span>Start Vehicle Detection</span>
+                </button>
+            </form>
+
+            <!-- Progress Bar -->
+            <div id="vehProgressContainer" style="display: none; margin-top: 20px;">
+                <div class="d-flex justify-content-between" style="font-size: 0.78rem; color: #94a3b8;">
+                    <span id="vehProgressMsg">Processing video frames...</span>
+                    <span id="vehProgressPercent">0%</span>
+                </div>
+                <div class="progress-surv-bar">
+                    <div id="vehProgressBar" class="progress-surv-fill"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Output & Results Display -->
+    <div class="col-lg-8">
+        <div class="dashboard-panel">
+            <div class="panel-header">
+                <h3 class="panel-title"><span>📺</span> Detection Telemetry & Visual Feed</h3>
+                <div id="downloadContainer" style="display: none;">
+                    <a id="downloadResultBtn" href="#" download class="btn-secondary-surv" style="font-size: 0.78rem; padding: 5px 12px;">
+                        <span>⬇️</span> Download Processed Media
+                    </a>
+                </div>
+            </div>
+
+            <!-- Viewport -->
+            <div class="video-display-frame mb-3" id="viewportContainer">
+                <div id="emptyStatePlaceholder" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">🚗</div>
+                    <div style="font-size: 1rem; color: #fff; font-weight: 600;">No Active Detection</div>
+                    <div style="font-size: 0.8rem; margin-top: 4px;">Select sample media or upload your own file and click Start Detection.</div>
+                </div>
+                <img id="processedImg" style="display: none;" alt="Detection Output" />
+                <video id="processedVid" controls style="display: none;"></video>
+            </div>
+
+            <!-- Detection Summary Details -->
+            <div id="summaryResultsContainer" style="display: none;">
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 14px;">Detection Metrics</h4>
+                <div class="row g-3">
+                    <div class="col-sm-4">
+                        <div style="background: #0b1220; padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                            <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Total Detected</div>
+                            <div id="statTotalVehicles" style="font-size: 1.5rem; font-weight: 800; color: #10b981;">0</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-8">
+                        <div style="background: #0b1220; padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                            <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Vehicle Class Breakdown</div>
+                            <div id="classBreakdownBadges" class="d-flex flex-wrap gap-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleSourceType(type) {
+    document.getElementById("sampleSelectGroup").style.display = type === "sample" ? "block" : "none";
+    document.getElementById("uploadGroup").style.display = type === "upload" ? "block" : "none";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    setupDropzone("vehDropzone", "vehFileInput", "vehFilePreview");
+
+    const form = document.getElementById("vehicleDetectForm");
+    const startBtn = document.getElementById("startDetectBtn");
+    const progressContainer = document.getElementById("vehProgressContainer");
+    const progressBar = document.getElementById("vehProgressBar");
+    const progressPercent = document.getElementById("vehProgressPercent");
+    const progressMsg = document.getElementById("vehProgressMsg");
+
+    const emptyPlaceholder = document.getElementById("emptyStatePlaceholder");
+    const processedImg = document.getElementById("processedImg");
+    const processedVid = document.getElementById("processedVid");
+    const summaryContainer = document.getElementById("summaryResultsContainer");
+    const statTotalVehicles = document.getElementById("statTotalVehicles");
+    const classBreakdownBadges = document.getElementById("classBreakdownBadges");
+    const downloadContainer = document.getElementById("downloadContainer");
+    const downloadBtn = document.getElementById("downloadResultBtn");
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        startBtn.disabled = true;
+        startBtn.innerHTML = "<span>⏳</span> <span>Processing...</span>";
+
+        const formData = new FormData(form);
+
+        try {
+            const resp = await fetch("{{ url_for('vehicle.detect') }}", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await resp.json();
+            if (!data.success) {
+                showToast(data.error || "Detection failed", "error");
+                startBtn.disabled = false;
+                startBtn.innerHTML = "<span>🔍</span> <span>Start Vehicle Detection</span>";
+                return;
+            }
+
+            if (!data.is_video) {
+                // Immediate image result
+                emptyPlaceholder.style.display = "none";
+                processedVid.style.display = "none";
+                processedImg.src = data.result.output_image;
+                processedImg.style.display = "block";
+
+                statTotalVehicles.innerText = data.result.total_vehicles;
+                renderClassBadges(data.result.vehicle_counts);
+                summaryContainer.style.display = "block";
+
+                downloadBtn.href = data.result.output_image;
+                downloadContainer.style.display = "block";
+
+                showToast(`Detected ${data.result.total_vehicles} vehicles successfully!`, "success");
+                startBtn.disabled = false;
+                startBtn.innerHTML = "<span>🔍</span> <span>Start Vehicle Detection</span>";
+            } else {
+                // Background video job
+                progressContainer.style.display = "block";
+                pollJobStatus(
+                    data.job_id,
+                    (percent, msg) => {
+                        progressBar.style.width = percent + "%";
+                        progressPercent.innerText = percent + "%";
+                        progressMsg.innerText = msg;
+                    },
+                    (session) => {
+                        progressContainer.style.display = "none";
+                        emptyPlaceholder.style.display = "none";
+                        processedImg.style.display = "none";
+                        
+                        processedVid.src = "/media/" + session.output_path;
+                        processedVid.style.display = "block";
+                        processedVid.play();
+
+                        statTotalVehicles.innerText = session.total_vehicles;
+                        const summary = session.summary || {};
+                        renderClassBadges(summary.vehicle_type_distribution || {});
+                        summaryContainer.style.display = "block";
+
+                        downloadBtn.href = "/media/" + session.output_path;
+                        downloadContainer.style.display = "block";
+
+                        showToast("Video processing completed successfully!", "success");
+                        startBtn.disabled = false;
+                        startBtn.innerHTML = "<span>🔍</span> <span>Start Vehicle Detection</span>";
+                    },
+                    (err) => {
+                        progressContainer.style.display = "none";
+                        showToast("Error processing video: " + err, "error");
+                        startBtn.disabled = false;
+                        startBtn.innerHTML = "<span>🔍</span> <span>Start Vehicle Detection</span>";
+                    }
+                );
+            }
+        } catch (err) {
+            showToast("Network or processing error: " + err.message, "error");
+            startBtn.disabled = false;
+            startBtn.innerHTML = "<span>🔍</span> <span>Start Vehicle Detection</span>";
+        }
+    });
+
+    function renderClassBadges(counts) {
+        classBreakdownBadges.innerHTML = "";
+        const keys = Object.keys(counts);
+        if (keys.length === 0) {
+            classBreakdownBadges.innerHTML = "<span class='text-muted' style='font-size: 0.8rem;'>None detected</span>";
+            return;
+        }
+        keys.forEach(k => {
+            const badge = document.createElement("span");
+            badge.style.cssText = "background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;";
+            badge.innerText = `${k.toUpperCase()}: ${counts[k]}`;
+            classBreakdownBadges.appendChild(badge);
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}About Project | Intelligent Traffic Safety System{% endblock %}
+{% block breadcrumb %}About System & Architecture{% endblock %}
+
+{% block content %}
+<div class="page-header-block">
+    <div>
+        <h1 class="page-title">Intelligent Traffic Safety System (ITSS)</h1>
+        <div class="page-tagline">Comprehensive documentation, architectural workflows, neural pipelines, and technical specifications.</div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Overview, Problem, Architecture -->
+    <div class="col-lg-8">
+        <!-- Project Overview & Objectives -->
+        <div class="dashboard-panel mb-4">
+            <h3 class="panel-title mb-3"><span>📋</span> Project Overview & Problem Statement</h3>
+            <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7;">
+                Modern roadway networks face escalating challenges from exponential vehicle density, human driver fatigue, delayed emergency accident responses, and speeding infractions. Traditional manual traffic monitoring is labor-intensive, error-prone, and incapable of continuous real-time incident detection.
+            </p>
+            <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7;">
+                The <strong>Intelligent Traffic Safety System</strong> transforms existing roadway surveillance cameras into autonomous safety sentinels. By leveraging state-of-the-art computer vision models (Darknet YOLOv3 and Google MediaPipe), the platform delivers automated vehicle counting, congestion classification, collision boundary detection, speed tracking overlays, and operator fatigue monitoring in a unified command center.
+            </p>
+        </div>
+
+        <!-- Architectural Workflow Diagram -->
+        <div class="dashboard-panel mb-4">
+            <h3 class="panel-title mb-3"><span>🏗️</span> System Architecture & Data Flow</h3>
+            <div style="background: #080d1a; padding: 20px; border-radius: 8px; border: 1px solid var(--border-subtle); overflow-x: auto;">
+                <div style="display: flex; flex-direction: column; gap: 14px; font-size: 0.82rem;">
+                    <!-- Step 1 -->
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="background: #0284c7; color: #fff; padding: 4px 10px; border-radius: 6px; font-weight: 700;">STEP 1</span>
+                        <span style="color: #fff; font-weight: 600;">Media Intake Layer:</span>
+                        <span style="color: var(--text-secondary);">Video streams, uploaded MP4/AVI surveillance feeds, high-res roadway imagery, or live webcams.</span>
+                    </div>
+                    <!-- Step 2 -->
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="background: #2563eb; color: #fff; padding: 4px 10px; border-radius: 6px; font-weight: 700;">STEP 2</span>
+                        <span style="color: #fff; font-weight: 600;">Neural Inference Layer:</span>
+                        <span style="color: var(--text-secondary);">OpenCV DNN forward-pass through YOLOv3-Tiny (416x416 blob) + MediaPipe 468-point 3D FaceMesh.</span>
+                    </div>
+                    <!-- Step 3 -->
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="background: #7c3aed; color: #fff; padding: 4px 10px; border-radius: 6px; font-weight: 700;">STEP 3</span>
+                        <span style="color: #fff; font-weight: 600;">Spatial & Temporal Evaluation:</span>
+                        <span style="color: var(--text-secondary);">Centroid tracking, rolling density coefficients, bounding box overlap checks with delayed confirmation.</span>
+                    </div>
+                    <!-- Step 4 -->
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="background: #059669; color: #fff; padding: 4px 10px; border-radius: 6px; font-weight: 700;">STEP 4</span>
+                        <span style="color: #fff; font-weight: 600;">Telemetry & Alert Generation:</span>
+                        <span style="color: var(--text-secondary);">Persistent SQLite session logs, critical acoustic alarms, annotated video compilation, and evidence frames.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Future Enhancements (Phase 14) -->
+        <div class="dashboard-panel">
+            <h3 class="panel-title mb-3"><span>🚀</span> Phase 14: Future Computer Vision Enhancements</h3>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div style="background: #0b1220; padding: 14px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                        <div style="font-weight: 700; color: #38bdf8; margin-bottom: 4px;">1. Automated Number Plate Recognition (ANPR)</div>
+                        <div style="font-size: 0.76rem; color: var(--text-secondary);">High-accuracy OCR for license plates with data privacy anonymization.</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div style="background: #0b1220; padding: 14px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                        <div style="font-weight: 700; color: #10b981; margin-bottom: 4px;">2. Lane-wise Density & Heatmaps</div>
+                        <div style="font-size: 0.76rem; color: var(--text-secondary);">Delineated corridor traffic occupancy and spatial density heatmaps.</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div style="background: #0b1220; padding: 14px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                        <div style="font-weight: 700; color: #f59e0b; margin-bottom: 4px;">3. Two-Wheeler Helmet Detection</div>
+                        <div style="font-size: 0.76rem; color: var(--text-secondary);">Motorcyclist safety compliance detection for helmet and safety gear.</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div style="background: #0b1220; padding: 14px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                        <div style="font-weight: 700; color: #ef4444; margin-bottom: 4px;">4. Emergency Vehicle Priority Classification</div>
+                        <div style="font-size: 0.76rem; color: var(--text-secondary);">Ambulance and fire engine detection for automated green-wave traffic signaling.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Tech Stack, Modules, Limitations -->
+    <div class="col-lg-4">
+        <!-- Tech Stack -->
+        <div class="dashboard-panel mb-4">
+            <h3 class="panel-title mb-3"><span>💻</span> Technology Stack</h3>
+            <ul style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.8; padding-left: 20px; margin: 0;">
+                <li><strong>Backend:</strong> Python 3.11, Flask 3.0, Werkzeug</li>
+                <li><strong>Computer Vision:</strong> OpenCV 4.13, MediaPipe 1.2, NumPy</li>
+                <li><strong>Deep Learning:</strong> Darknet YOLOv3-Tiny (48 layers)</li>
+                <li><strong>Database:</strong> SQLite with SQLAlchemy ORM</li>
+                <li><strong>Frontend:</strong> HTML5, CSS3, Bootstrap 5, Chart.js</li>
+                <li><strong>Video Processing:</strong> H.264 / MP4V codecs, MJPEG streaming</li>
+            </ul>
+        </div>
+
+        <!-- 5 Core Modules -->
+        <div class="dashboard-panel mb-4">
+            <h3 class="panel-title mb-3"><span>🧩</span> Core CV Modules</h3>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.6;">
+                <div class="mb-2"><strong>1. Vehicle Classifier:</strong> Classifies cars, trucks, buses, motorcycles, bicycles.</div>
+                <div class="mb-2"><strong>2. Traffic Density:</strong> Rolling frame vehicle count classified into Low, Medium, High.</div>
+                <div class="mb-2"><strong>3. Accident Proximity:</strong> Spatial bounding box intersection with frame persistence.</div>
+                <div class="mb-2"><strong>4. Overspeed Radar:</strong> Optical centroid displacement & limit comparison HUD.</div>
+                <div><strong>5. Driver Drowsiness:</strong> Eye Aspect Ratio (EAR) using 6 landmark coordinates per eye.</div>
+            </div>
+        </div>
+
+        <!-- Documented Limitations -->
+        <div class="dashboard-panel">
+            <h3 class="panel-title mb-3"><span>⚠️</span> System Limitations</h3>
+            <div style="font-size: 0.76rem; color: var(--text-secondary); line-height: 1.6;">
+                <div>• Speed estimation uses 2D pixel motion; accurate km/h requires surveyed roadway geometry and camera calibration.</div>
+                <div>• Optical accident flags are based on proximity overlap and require human operator confirmation before dispatch.</div>
+                <div>• Drowsiness detection requires direct facial line-of-sight and adequate in-cabin lighting.</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

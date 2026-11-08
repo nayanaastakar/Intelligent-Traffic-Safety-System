@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Video Upload & Processing Center | Intelligent Traffic Safety System{% endblock %}
+{% block breadcrumb %}Central Media Processing Center{% endblock %}
+
+{% block content %}
+<div class="page-header-block">
+    <div>
+        <h1 class="page-title">Central Video Upload & Processing Center</h1>
+        <div class="page-tagline">Universal intake pipeline for processing surveillance video and imagery through computer vision neural networks.</div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Upload Submission Form -->
+    <div class="col-lg-5">
+        <div class="dashboard-panel">
+            <div class="panel-header">
+                <h3 class="panel-title"><span>📤</span> Submit Media Job</h3>
+            </div>
+
+            <form id="centralUploadForm">
+                <div class="mb-3">
+                    <label class="form-label-surv">Target Detection Module</label>
+                    <select name="module" id="uploadModuleSelect" class="form-control-surv">
+                        <option value="vehicle">Vehicle Detection & Classification (Image or Video)</option>
+                        <option value="traffic">Traffic Density Analysis (Video Only)</option>
+                        <option value="overspeed">Overspeed Detection & Radar (Image or Video)</option>
+                        <option value="accident">Accident Proximity Detection (Video Only)</option>
+                        <option value="drowsiness">Driver Drowsiness Analysis (Video Only)</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label-surv">Upload Video / Image File</label>
+                    <div class="upload-dropzone" id="centralDropzone">
+                        <div class="upload-icon">📁</div>
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #fff;">Drag & Drop File Here</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Supports MP4, MOV, AVI, PNG, JPG (Max 200MB)</div>
+                        <input type="file" id="centralFileInput" name="file" accept="video/*,image/*" style="display: none;">
+                    </div>
+                    <div id="centralFilePreview"></div>
+                </div>
+
+                <button type="submit" id="startCentralProcBtn" class="btn-primary-surv w-100 justify-content-center">
+                    <span>⚡</span> <span>Submit & Start Processing</span>
+                </button>
+            </form>
+
+            <!-- Processing Progress -->
+            <div id="centralProgressBox" style="display: none; margin-top: 24px;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span id="centralProgressMsg" style="font-size: 0.8rem; color: #38bdf8; font-weight: 600;">Processing frames...</span>
+                    <span id="centralProgressPct" style="font-size: 0.8rem; color: #fff; font-weight: 700;">0%</span>
+                </div>
+                <div class="progress-surv-bar">
+                    <div id="centralProgressBar" class="progress-surv-fill"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Job Result & Preview Area -->
+    <div class="col-lg-7">
+        <div class="dashboard-panel">
+            <div class="panel-header">
+                <h3 class="panel-title"><span>📺</span> Processed Visual Output</h3>
+                <div id="centralDownloadArea" style="display: none;">
+                    <a id="centralDownloadBtn" href="#" download class="btn-secondary-surv" style="font-size: 0.78rem; padding: 5px 12px;">
+                        <span>⬇️</span> Download Media
+                    </a>
+                </div>
+            </div>
+
+            <div class="video-display-frame mb-3" id="centralViewport">
+                <div id="centralEmptyState" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">🎞️</div>
+                    <div style="font-size: 1rem; color: #fff; font-weight: 600;">No Media in Processing Pipeline</div>
+                    <div style="font-size: 0.8rem; margin-top: 4px;">Select a target module and upload a media file to inspect neural network inference.</div>
+                </div>
+                <img id="centralOutputImg" style="display: none;" alt="Processed Output" />
+                <video id="centralOutputVid" controls style="display: none;"></video>
+            </div>
+
+            <!-- Result Metrics Box -->
+            <div id="centralResultMetrics" style="display: none; padding: 16px; background: #0b1220; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 10px;">Pipeline Results Summary</h4>
+                <div id="centralMetricsContent" style="font-size: 0.85rem; color: #cbd5e1;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    setupDropzone("centralDropzone", "centralFileInput", "centralFilePreview");
+
+    const form = document.getElementById("centralUploadForm");
+    const submitBtn = document.getElementById("startCentralProcBtn");
+    const progressBox = document.getElementById("centralProgressBox");
+    const progressBar = document.getElementById("centralProgressBar");
+    const progressPct = document.getElementById("centralProgressPct");
+    const progressMsg = document.getElementById("centralProgressMsg");
+
+    const emptyState = document.getElementById("centralEmptyState");
+    const outputImg = document.getElementById("centralOutputImg");
+    const outputVid = document.getElementById("centralOutputVid");
+    const resultMetrics = document.getElementById("centralResultMetrics");
+    const metricsContent = document.getElementById("centralMetricsContent");
+    const downloadArea = document.getElementById("centralDownloadArea");
+    const downloadBtn = document.getElementById("centralDownloadBtn");
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const fileInput = document.getElementById("centralFileInput");
+        if (!fileInput.files.length) {
+            showToast("Please choose or drag-and-drop a file first", "warning");
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = "<span>⏳</span> <span>Uploading & Dispatching...</span>";
+        progressBox.style.display = "block";
+        progressBar.style.width = "5%";
+        progressPct.innerText = "5%";
+        progressMsg.innerText = "Uploading media...";
+
+        const formData = new FormData(form);
+
+        try {
+            const resp = await fetch("{{ url_for('uploads.process_upload') }}", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await resp.json();
+            if (!data.success) {
+                showToast("Job submission failed: " + (data.error || "Unknown error"), "error");
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = "<span>⚡</span> <span>Submit & Start Processing</span>";
+                progressBox.style.display = "none";
+                return;
+            }
+
+            if (!data.is_video) {
+                // Image Result
+                progressBox.style.display = "none";
+                emptyState.style.display = "none";
+                outputVid.style.display = "none";
+                outputImg.src = data.result.output_image;
+                outputImg.style.display = "block";
+
+                metricsContent.innerHTML = `
+                    <div><strong>Session ID:</strong> <code>${data.session_id}</code></div>
+                    <div class="mt-1"><strong>Status:</strong> <span class="badge-status badge-completed">COMPLETED</span></div>
+                `;
+                resultMetrics.style.display = "block";
+
+                downloadBtn.href = data.result.output_image;
+                downloadArea.style.display = "block";
+
+                showToast("Image processed successfully!", "success");
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = "<span>⚡</span> <span>Submit & Start Processing</span>";
+            } else {
+                // Video Background Job
+                pollJobStatus(
+                    data.job_id,
+                    (percent, msg) => {
+                        progressBar.style.width = percent + "%";
+                        progressPct.innerText = percent + "%";
+                        progressMsg.innerText = msg;
+                    },
+                    (session) => {
+                        progressBox.style.display = "none";
+                        emptyState.style.display = "none";
+                        outputImg.style.display = "none";
+                        outputVid.src = "/media/" + session.output_path;
+                        outputVid.style.display = "block";
+                        outputVid.play();
+
+                        metricsContent.innerHTML = `
+                            <div><strong>Session ID:</strong> <code>${session.id}</code></div>
+                            <div><strong>Module:</strong> ${session.module.toUpperCase()}</div>
+                            <div><strong>Processing Duration:</strong> ${session.duration_sec}s</div>
+                            <div><strong>Status:</strong> <span class="badge-status badge-completed">COMPLETED</span></div>
+                        `;
+                        resultMetrics.style.display = "block";
+
+                        downloadBtn.href = "/media/" + session.output_path;
+                        downloadArea.style.display = "block";
+
+                        showToast("Video processing completed!", "success");
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = "<span>⚡</span> <span>Submit & Start Processing</span>";
+                    },
+                    (err) => {
+                        progressBox.style.display = "none";
+                        showToast("Processing error: " + err, "error");
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = "<span>⚡</span> <span>Submit & Start Processing</span>";
+                    }
+                );
+            }
+
+        } catch (err) {
+            showToast("Network failure: " + err.message, "error");
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = "<span>⚡</span> <span>Submit & Start Processing</span>";
+            progressBox.style.display = "none";
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}Traffic Density Analysis | Intelligent Traffic Safety System{% endblock %}
+{% block breadcrumb %}Traffic Density Analysis{% endblock %}
+
+{% block content %}
+<div class="page-header-block">
+    <div>
+        <h1 class="page-title">Traffic Density Analysis</h1>
+        <div class="page-tagline">Rolling roadway occupancy estimation, flow metrics, and automated congestion detection.</div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Controls Column -->
+    <div class="col-lg-4">
+        <div class="dashboard-panel">
+            <div class="panel-header">
+                <h3 class="panel-title"><span>📈</span> Analysis Configuration</h3>
+            </div>
+
+            <form id="trafficForm">
+                <div class="mb-3">
+                    <label class="form-label-surv">Video Source</label>
+                    <div class="d-flex flex-column gap-2">
+                        <label class="d-flex align-items-center gap-2" style="font-size: 0.85rem; color: #cbd5e1; cursor: pointer;">
+                            <input type="radio" name="source_type" value="sample" checked onchange="toggleSource('sample')">
+                            <span>Use Sample Traffic Video (sample_traffic.mp4)</span>
+                        </label>
+                        <label class="d-flex align-items-center gap-2" style="font-size: 0.85rem; color: #cbd5e1; cursor: pointer;">
+                            <input type="radio" name="source_type" value="upload" onchange="toggleSource('upload')">
+                            <span>Upload Custom Surveillance Video</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="trafficUploadGroup" class="mb-3" style="display: none;">
+                    <label class="form-label-surv">Upload Video</label>
+                    <div class="upload-dropzone" id="trafficDropzone">
+                        <div class="upload-icon">🎥</div>
+                        <div style="font-size: 0.88rem; color: #fff; font-weight: 600;">Drag & Drop Video File</div>
+                        <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Supports MP4, MOV, AVI (Max 200MB)</div>
+                        <input type="file" id="trafficFileInput" name="file" accept="video/*" style="display: none;">
+                    </div>
+                    <div id="trafficFilePreview"></div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label-surv">Detection Confidence: <span id="confVal">0.40</span></label>
+                    <input type="range" class="form-range" name="conf_threshold" min="0.1" max="0.9" step="0.05" value="0.4" oninput="document.getElementById('confVal').innerText = parseFloat(this.value).toFixed(2)">
+                </div>
+
+                <button type="submit" id="startTrafficBtn" class="btn-primary-surv w-100 justify-content-center">
+                    <span>📊</span> <span>Analyze Traffic Density</span>
+                </button>
+            </form>
+
+            <!-- Progress Indicator -->
+            <div id="trafficProgress" style="display: none; margin-top: 20px;">
+                <div class="d-flex justify-content-between" style="font-size: 0.78rem; color: #94a3b8;">
+                    <span id="trafficProgressMsg">Running YOLO density tracker...</span>
+                    <span id="trafficProgressPercent">0%</span>
+                </div>
+                <div class="progress-surv-bar">
+                    <div id="trafficProgressBar" class="progress-surv-fill"></div>
+                </div>
+            </div>
+
+            <!-- Classification Threshold Reference Card -->
+            <div style="margin-top: 24px; padding: 14px; background: #0b1220; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                <div style="font-size: 0.78rem; font-weight: 700; color: #fff; margin-bottom: 8px;">Density Classification Rules</div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.6;">
+                    <div><span class="badge-status badge-low" style="padding: 1px 6px; font-size: 0.68rem;">LOW</span> &lt; 3.0 vehicles/frame avg</div>
+                    <div><span class="badge-status badge-medium" style="padding: 1px 6px; font-size: 0.68rem;">MEDIUM</span> 3.0 &ndash; 7.0 vehicles/frame avg</div>
+                    <div><span class="badge-status badge-high" style="padding: 1px 6px; font-size: 0.68rem;">HIGH</span> &gt; 7.0 vehicles/frame (Congestion Warning)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Output Feed & Analytics Column -->
+    <div class="col-lg-8">
+        <div class="dashboard-panel">
+            <div class="panel-header">
+                <h3 class="panel-title"><span>📺</span> Density Telemetry Feed</h3>
+                <div id="trafficDownloadContainer" style="display: none;">
+                    <a id="trafficDownloadBtn" href="#" download class="btn-secondary-surv" style="font-size: 0.78rem; padding: 5px 12px;">
+                        <span>⬇️</span> Download Analyzed Video
+                    </a>
+                </div>
+            </div>
+
+            <div class="video-display-frame mb-3" id="trafficViewport">
+                <div id="trafficEmptyState" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">📈</div>
+                    <div style="font-size: 1rem; color: #fff; font-weight: 600;">No Active Density Tracker</div>
+                    <div style="font-size: 0.8rem; margin-top: 4px;">Choose the sample video or upload a file and start the density pipeline.</div>
+                </div>
+                <video id="trafficVideoPlayer" controls style="display: none;"></video>
+            </div>
+
+            <!-- Telemetry Metrics & Timeline -->
+            <div id="trafficSummarySection" style="display: none;">
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-3">
+                        <div style="background: #0b1220; padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                            <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Average Density</div>
+                            <div id="statAvgDensity" style="font-size: 1.4rem; font-weight: 800; color: #38bdf8;">0.00</div>
+                            <div style="font-size: 0.68rem; color: var(--text-muted);">Vehicles / Frame</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div style="background: #0b1220; padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                            <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Classification</div>
+                            <div id="statDensityClass" style="margin-top: 4px;"></div>
+                        </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div style="background: #0b1220; padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                            <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Congestion Alert</div>
+                            <div id="statCongestionAlert" style="font-size: 0.95rem; font-weight: 700; margin-top: 6px;">None</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div style="background: #0b1220; padding: 12px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                            <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Total Cumulative</div>
+                            <div id="statTotalCounted" style="font-size: 1.4rem; font-weight: 800; color: #10b981;">0</div>
+                            <div style="font-size: 0.68rem; color: var(--text-muted);">Vehicle Occurrences</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Density Timeline Chart -->
+                <div class="dashboard-panel p-3">
+                    <div class="panel-header mb-2 pb-2">
+                        <h4 style="font-size: 0.88rem; font-weight: 700; color: #fff; margin: 0;">Dynamic Vehicle Count & Density Timeline</h4>
+                    </div>
+                    <div style="height: 180px; position: relative;">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let timelineChartInstance = null;
+
+function toggleSource(type) {
+    document.getElementById("trafficUploadGroup").style.display = type === "upload" ? "block" : "none";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    setupDropzone("trafficDropzone", "trafficFileInput", "trafficFilePreview");
+
+    const form = document.getElementById("trafficForm");
+    const startBtn = document.getElementById("startTrafficBtn");
+    const progressContainer = document.getElementById("trafficProgress");
+    const progressBar = document.getElementById("trafficProgressBar");
+    const progressPercent = document.getElementById("trafficProgressPercent");
+    const progressMsg = document.getElementById("trafficProgressMsg");
+
+    const emptyState = document.getElementById("trafficEmptyState");
+    const videoPlayer = document.getElementById("trafficVideoPlayer");
+    const summarySection = document.getElementById("trafficSummarySection");
+    const statAvgDensity = document.getElementById("statAvgDensity");
+    const statDensityClass = document.getElementById("statDensityClass");
+    const statCongestionAlert = document.getElementById("statCongestionAlert");
+    const statTotalCounted = document.getElementById("statTotalCounted");
+    const downloadContainer = document.getElementById("trafficDownloadContainer");
+    const downloadBtn = document.getElementById("trafficDownloadBtn");
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        startBtn.disabled = true;
+        startBtn.innerHTML = "<span>⏳</span> <span>Dispatched...</span>";
+        progressContainer.style.display = "block";
+
+        const formData = new FormData(form);
+
+        try {
+            const resp = await fetch("{{ url_for('traffic.analyze') }}", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await resp.json();
+            if (!data.success) {
+                showToast(data.error || "Analysis failed", "error");
+                startBtn.disabled = false;
+                startBtn.innerHTML = "<span>📊</span> <span>Analyze Traffic Density</span>";
+                progressContainer.style.display = "none";
+                return;
+            }
+
+            pollJobStatus(
+                data.job_id,
+                (percent, msg) => {
+                    progressBar.style.width = percent + "%";
+                    progressPercent.innerText = percent + "%";
+                    progressMsg.innerText = msg;
+                },
+                (session) => {
+                    progressContainer.style.display = "none";
+                    emptyState.style.display = "none";
+                    videoPlayer.src = "/media/" + session.output_path;
+                    videoPlayer.style.display = "block";
+                    videoPlayer.play();
+
+                    const summary = session.summary || {};
+                    statAvgDensity.innerText = (summary.average_density || 0).toFixed(2);
+                    
+                    const dClass = summary.density_classification || "Low Density";
+                    const badgeClass = dClass.includes("Low") ? "badge-low" : (dClass.includes("Medium") ? "badge-medium" : "badge-high");
+                    statDensityClass.innerHTML = `<span class="badge-status ${badgeClass}">${dClass}</span>`;
+
+                    if (summary.congestion_alert) {
+                        statCongestionAlert.innerHTML = `<span style="color: #ef4444;">⚠️ HEAVY CONGESTION</span>`;
+                        showToast("Congestion Alert: Roadway occupancy exceeds critical threshold!", "warning");
+                    } else {
+                        statCongestionAlert.innerHTML = `<span style="color: #10b981;">✓ Optimal Flow</span>`;
+                    }
+
+                    statTotalCounted.innerText = summary.total_vehicles_counted || session.total_vehicles;
+                    summarySection.style.display = "block";
+
+                    downloadBtn.href = "/media/" + session.output_path;
+                    downloadContainer.style.display = "block";
+
+                    // Render Timeline Chart
+                    renderDensityTimeline(summary.density_timeline || []);
+
+                    showToast("Traffic density analysis completed!", "success");
+                    startBtn.disabled = false;
+                    startBtn.innerHTML = "<span>📊</span> <span>Analyze Traffic Density</span>";
+                },
+                (err) => {
+                    progressContainer.style.display = "none";
+                    showToast("Processing error: " + err, "error");
+                    startBtn.disabled = false;
+                    startBtn.innerHTML = "<span>📊</span> <span>Analyze Traffic Density</span>";
+                }
+            );
+
+        } catch (err) {
+            showToast("Network error: " + err.message, "error");
+            startBtn.disabled = false;
+            startBtn.innerHTML = "<span>📊</span> <span>Analyze Traffic Density</span>";
+            progressContainer.style.display = "none";
+        }
+    });
+
+    function renderDensityTimeline(timeline) {
+        const labels = timeline.map(t => `${t.timestamp_sec}s`);
+        const vehData = timeline.map(t => t.vehicles);
+        const avgData = timeline.map(t => t.rolling_avg);
+
+        const ctx = document.getElementById("timelineChart");
+        if (!ctx) return;
+
+        if (timelineChartInstance) {
+            timelineChartInstance.destroy();
+        }
+
+        timelineChartInstance = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Live Vehicles in Frame",
+                        data: vehData,
+                        borderColor: "#38bdf8",
+                        backgroundColor: "rgba(56, 189, 248, 0.1)",
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: "Cumulative Rolling Average",
+                        data: avgData,
+                        borderColor: "#f59e0b",
+                        borderDash: [5, 5],
+                        tension: 0.1,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { color: "#94a3b8", maxTicksLimit: 12 }, grid: { display: false } },
+                    y: { ticks: { color: "#94a3b8" }, grid: { color: "#1e293b" } }
+                },
+                plugins: {
+                    legend: { labels: { color: "#94a3b8", font: { size: 10 } } }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
